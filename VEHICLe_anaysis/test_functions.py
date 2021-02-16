@@ -20,7 +20,8 @@ for j in smiles:
     AllChem.Compute2DCoords(y)
     for c in y.GetConformers():
         p=c.GetPositions()
-
+        Hi Joe
+        From Joe
         ### prints numpy array with coords for each atom but how do we get them out of that? ###
 
 
