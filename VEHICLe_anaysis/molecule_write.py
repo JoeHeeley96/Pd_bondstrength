@@ -12,3 +12,5 @@ def molecule_write_image(VEHICLe_as_dataframe, desired_filename_png):
     image=Draw.MolsToGridImage(list_of_mol_objects)
     image.save(desired_filename_png)
 ### NEED TO FIX THE WRITING SECTION OF THIS###
+
+

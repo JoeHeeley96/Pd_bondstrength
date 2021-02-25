@@ -5,6 +5,9 @@ from VEHICLe_read import read_mol_from_smiles
 import numpy as np
 import rdkit
 import sys
+import cirpy
+from datetime import date
+from file_generation import VEHICLe_string_to_com
 #from mol_translator.structure.structure_write import write_mol_toxyz
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -13,29 +16,15 @@ VEHICLe=read_csv_to_dataframe('VEHICLe.csv')
 head=VEHICLe.head()
 
 sample=VEHICLe.sample()
+print(sample)
 smiles=sample['Smiles']
-for j in smiles:
-    print(j)
-    y=read_mol_from_smiles(j)
-    x=Chem.AddHs(y)
+date=date.today()
 
-    z=AllChem.Compute2DCoords(x)
-    type_array = np.zeros(x.GetNumAtoms(), dtype=np.int32)
+VEHICLe_string_to_com(sample)
 
 
-    for j, atoms in enumerate(x.GetAtoms()):
-        type_array[j] = atoms.GetAtomicNum()
 
-    for c in x.GetConformers():
-        xyz=c.GetPositions()
-        xyz_list=xyz.tolist()
-        print(xyz_list)
 
-    match_coords=list(zip(type_array, xyz_list))
-    print(match_coords)
-    with open('galoo.txt', 'w') as f:
-        for i in match_coords:
-            print(*i, sep=', ', file=f)
 
 
 
