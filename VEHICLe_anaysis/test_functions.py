@@ -1,4 +1,5 @@
 import pandas as pd
+import glob
 from VEHICLe_read import read_csv_to_dataframe
 from VEHICLe_read import read_list_of_smiles
 from VEHICLe_read import read_mol_from_smiles
@@ -13,51 +14,33 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem import rdmolfiles
 VEHICLe=read_csv_to_dataframe('VEHICLe.csv')
-head=VEHICLe.head()
-
-sample=VEHICLe.sample()
-print(sample)
-smiles=sample['Smiles']
-date=date.today()
-
-VEHICLe_string_to_com(sample)
+head=VEHICLe.head(30)
 
 
 
+#VEHICLe_string_to_com(head)
+
+with open('com_files/S1_2021-02-26_wb97xd_631gd_opt.com') as f:
+    H_num=[]
+    H_coord=[]
+    for line in f:
+        if 'H' in line:
+            H_coord.append(line)
+
+    for i in range(len(H_coord)):
+        H_num.append(i + 1)
+
+    zip=zip(H_num, H_coord)
 
 
+    with open('test_anions/S1_'  + 'anion_2021-02-26_wb97xd_631gd_opt.com', 'w') as p:
+        for i in zip:
+            print(i[1])
+            lines=f.readlines()
+            f.seek(0)
+            for j in lines:
+                print(j)
+                if j != i[1]:
+                    p.write(line)
 
 
-
-            #str=np.savetxt(sys.stdout, j, newline='', fmt='%.3f')
-
-
-
-
-           # with open('test.txt', 'w') as f:
-            #    print(str, file=f)
-
-    #    for j in c.GetPositions():
-    #        for i in type_array:
-    #            with open('oogy.xyz', 'w') as f:
-    #               print(i, j, file=f)
-
-
-    #for c in y.GetConformers():
-     #   with open('oogy.xyz', 'w') as f:
-      #      print(c.GetPositions(), file=f)
-
-        ### prints numpy array with coords for each atom but how do we get them out of that? ###
-
-
-#j=['1','2','3','4','5', '6', '7', '8', '9', '10']
-#for k in j:
-#    x=VEHICLe.sample()
-#    y=read_list_of_smiles(x)#
-
- #   for i in y:
- #       print(i)
- #       mol=read_mol_from_smiles(i)
- #       molHs=Chem.AddHs(mol)
- #       xyz=Chem.MolToXYZFile(molHs)
- #       print(xyz)
