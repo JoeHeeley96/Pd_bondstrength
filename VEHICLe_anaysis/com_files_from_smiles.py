@@ -32,7 +32,7 @@ def VEHICLe_string_to_com(dataframe):
         Regid=row.Regid.item()
         todays_date=date.today()
         xyzfilename ='xyz_files/' + str(Regid) + '.xyz'
-        comfilename ='com_files/' + str(Regid) + '_' + str(todays_date) + '_wb97xd_631gd_opt.com'
+        comfilename ='neutral_comfiles/' + str(Regid) + '_' + str(todays_date) + '_wb97xd_631gd_opt.com'
         chkfilename= str(Regid) + '_' + str(todays_date) + '_wb97xd_631gd_opt.chk'
         print(comfilename)
 
