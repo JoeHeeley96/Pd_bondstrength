@@ -19,8 +19,9 @@ from anion_generation import anion_from_com
 
 comfilenames=glob.glob('neutral_comfiles/*')
 
-for file in comfilenames:
-    anion_from_com(file)
+for i in comfilenames:
+    anion_from_com(i)
+
 
 
 #VEHICLe_string_to_com(head)

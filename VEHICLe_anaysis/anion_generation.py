@@ -17,10 +17,13 @@ def anion_from_com(comfilename):
 
         for j, k in num_H_coords:
             anion_comfilename = name[0] + '_' + str(j) + 'anion_' + name[1] + '_' + name[2] + '_' + name[3] + '_' + name[4]
+            anion_chkfilename = name[0] + '_' + str(j) + 'anion_' + name[1] + '_' + name[2] + '_' + name[3] + '_opt.chk'
             with open('anion_comfiles/' + anion_comfilename, 'w') as p:
                     with open(comfilename) as f:
                             for line in f:
-                                if line == '0 1\n':
+                                if line.startswith('%chk='):
+                                    print('%chk=' + anion_chkfilename, file=p)
+                                elif line == '0 1\n':
                                     print('-1 1', file =p)
                                 elif line != k:
                                     print(line.strip('\n'), file=p)
