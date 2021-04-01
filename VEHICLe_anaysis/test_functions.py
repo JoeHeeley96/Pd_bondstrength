@@ -28,7 +28,7 @@ from xyz2mol import xyz2AC
 import pytest
 
 
-files=glob.glob('xyz_files\\S1000*')
+files=glob.glob('xyz_files\\*')
 
 ffn=glob.glob('neutral_comfiles/*')
 ffb=glob.glob('bromine_comfiles/*')
@@ -37,13 +37,18 @@ ffb=glob.glob('bromine_comfiles/*')
  #   xyz_from_com(i)
 
 for x in files:
+    print(x)
     split = x.split('\\')
     name = split[1].split('_')
     xyz_read = read_xyz_file(x)
 
     mols = xyz2mol(xyz_read[0], xyz_read[2], xyz_read[1], use_huckel=True)
     for i in mols:
-        rdkit.Chem.Draw.MolToFile(i, name[0] + name[2] + '.png', kekulize=True)
+
+        try:
+            rdkit.Chem.Draw.MolToFile(i, name[0] + name[2] + '.png', kekulize=True)
+        except 'RDKit ERROR' :
+            print(file, 'has incorrect bromine')
 #for k in ffn:
 #    bromines_from_com(k)
 
