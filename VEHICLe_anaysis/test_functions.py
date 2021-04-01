@@ -18,17 +18,43 @@ from rdkit.Chem import rdmolfiles
 from rdkit.Chem.Draw import IPythonConsole
 from rdkit.Chem.Draw import MolDrawing, DrawingOptions
 from anion_generation import anion_from_com
-from bromine_generation import bromine_comfiles_from_xyz
 from xyzfile_generation import xyz_from_com
+from bromine_generation import bromines_from_com
 from xyz2mol import xyz2mol
 from xyz2mol import read_xyz_file
+from xyz2mol import AC2mol
+from xyz2mol import xyz2AC
+#from xyz2mol import x
 import pytest
 
-#files=glob.glob('neutral_comfiles/*')
-#for i in files:
-#    xyz_from_com(i)
 
-xyz_from_com('neutral_comfiles\\S1_2021-02-26_wb97xd_631gd_opt.com')
-#print(read_xyz_file('xyz_files/S1_2021-03-26.xyz'))
+files=glob.glob('xyz_files\\S1000*')
 
-b#romine_comfiles_from_xyz('xyz_files\\S1_2021-03-26_2021-02-26.xyz')
+ffn=glob.glob('neutral_comfiles/*')
+ffb=glob.glob('bromine_comfiles/*')
+
+#for i in ffb:
+ #   xyz_from_com(i)
+
+for x in files:
+    split = x.split('\\')
+    name = split[1].split('_')
+    xyz_read = read_xyz_file(x)
+
+    mols = xyz2mol(xyz_read[0], xyz_read[2], xyz_read[1], use_huckel=True)
+    for i in mols:
+        rdkit.Chem.Draw.MolToFile(i, name[0] + name[2] + '.png', kekulize=True)
+#for k in ffn:
+#    bromines_from_com(k)
+
+#for j in ffb:
+ #   xyz_from_com(j)
+
+
+
+#AC=xyz2AC(xyz_read[0], xyz_read[2], xyz_read[1])
+#mol=AC2mol(AC[1], AC[0], xyz_read[0], xyz_read[1])
+#mols=xyz2mol(xyz_read[0], xyz_read[2], xyz_read[1])
+
+
+

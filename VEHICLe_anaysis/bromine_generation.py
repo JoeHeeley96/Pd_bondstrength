@@ -1,5 +1,11 @@
 from xyzfile_generation import xyz_from_com
+from xyz2mol import xyz2mol
 from datetime import date
+
+def bromine_check(bromine_comfilename):
+    xyz_from_com(bromine_comfilename)
+
+
 
 def bromines_from_com(comfilename):
     ### Probelm with this approach is that you end up appending a Br to each carbon, despite the nature of the atom in question (eg/ quaternary, carbonyl etc)
@@ -7,8 +13,10 @@ def bromines_from_com(comfilename):
     name = split[1].split('_')
 
     with open(comfilename) as f:
+
         C_num = []
         C_coord = []
+        Atoms=[]
         for line in f:
             if 'C' in line:
                 C_coord.append(line)
@@ -23,6 +31,7 @@ def bromines_from_com(comfilename):
             bromine_comfilename = name[0] + '_' + str(j) + 'bromine_' + name[1] + '_' + name[2] + '_' + name[3] + '_' + name[4]
             bromine_chkfilename = name[0] + '_' + str(j) + 'bromine_' + name[1] + '_' + name[2] + '_' + name[3] + '_opt.chk'
 
+
             with open('bromine_comfiles/' + bromine_comfilename, 'w') as p:
                 with open(comfilename) as f:
                     for line in f:
@@ -34,14 +43,15 @@ def bromines_from_com(comfilename):
 
                         elif line == k:
                             exp = line.split(' ')
+                            Br_xcoord = float(exp[1])
+                            Br_ycoord = float(exp[2])
                             Br_zcoord = float(exp[3])
                             print(line.strip('\n'), file=p)
-                            print('Br', exp[1], exp[2], (Br_zcoord + 2.0), file=p)
+                            print('Br', (Br_xcoord), (Br_ycoord), (Br_zcoord + 2.0), file=p)
+
 
                         else:
                             print(line.strip('\n'), file=p)
-
-            xyz_from_com('bromine_comfiles\\' + bromine_comfilename)
 
 
 def bromine_comfiles_from_xyz(xyzfilename):
