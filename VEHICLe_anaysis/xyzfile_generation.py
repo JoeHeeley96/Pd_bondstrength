@@ -1,12 +1,13 @@
 from datetime import date
 
+
 def xyzcoords_from_type_array(filename, zipped_type_array):
     Atoms = {1: 'H', 6: 'C', 7: 'N', 8: 'O', 16: 'S'}
     with open(filename, 'w') as f:
         for i in zipped_type_array:
             for atomicnum, atom in Atoms.items():
                 if i[0] == atomicnum:
-                    print(atom, *i[1], sep=' ', file=f)
+                    print(atom, *i[2], file=f)
 
 def xyz_from_com(comfilename):
     todays_date = date.today()
@@ -34,3 +35,5 @@ def xyz_from_com(comfilename):
             for x in xyz:
                 line=str(x)
                 print(line.strip('\n'), file=g)
+
+

@@ -49,19 +49,55 @@ def VEHICLe_string_to_com(dataframe):
 
         x = read_mol_from_smiles(a)
         y = Chem.AddHs(x)
+        z=y.GetAtoms
 
-        z = AllChem.Compute2DCoords(y)
+        coords_2d = AllChem.Compute2DCoords(y)
         type_array = np.zeros(y.GetNumAtoms(), dtype=np.int32)
+        index_list=[]
 
         for j, atoms in enumerate(y.GetAtoms()):
             type_array[j] = atoms.GetAtomicNum()
+            index=atoms.GetIdx()
+            index_list.append(index)
+
 
         for c in y.GetConformers():
             xyz = c.GetPositions()
             xyz_list = xyz.tolist()
 
-        match_coords = zip(type_array, xyz_list)
+        match_coords = zip(type_array, index_list, xyz_list)
+
         xyzcoords_from_type_array(xyz_coord_filename, match_coords)
         write_gaussian_command_with_regid(Regid, chkfilename)
         com_from_xyz_coords(xyz_coord_filename, comfilename)
+
+def write_indexfile(dataframe):
+    smiles = dataframe['Smiles']
+    for a in smiles:
+        row = dataframe[dataframe.Smiles == a]
+        Regid = row.Regid.item()
+        indexfilename = 'txt_files/' + str(Regid) + '_indexing.txt'
+
+        x = read_mol_from_smiles(a)
+        y = Chem.AddHs(x)
+        z = y.GetAtoms
+
+        coords_2d = AllChem.Compute2DCoords(y)
+        type_array = np.zeros(y.GetNumAtoms(), dtype=np.int32)
+        index_list = []
+
+        for j, atoms in enumerate(y.GetAtoms()):
+            type_array[j] = atoms.GetAtomicNum()
+            index = atoms.GetIdx()
+            index_list.append(index)
+
+        for c in y.GetConformers():
+            xyz = c.GetPositions()
+            xyz_list = xyz.tolist()
+
+        match_coords = zip(type_array, index_list, xyz_list)
+
+        with open(indexfilename, 'w') as g:
+            for s,t,i in match_coords:
+                print(s, t, *i, file=g)
 
