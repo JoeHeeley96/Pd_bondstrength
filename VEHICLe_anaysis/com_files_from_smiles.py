@@ -1,5 +1,5 @@
 from VEHICLe_read import read_mol_from_smiles
-from xyzfile_generation import xyz_from_type_array
+from xyzfile_generation import xyzcoords_from_type_array
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from datetime import date
@@ -18,11 +18,11 @@ def write_gaussian_command_with_regid(Regid, chkfilename):
         p.write('\n')
         p.write('0 1')
 
-def com_from_xyz(xyzfilename):
+def com_from_xyz_coords(xyz_coord_filename, comfilename):
     with open('Gaussian_command.txt') as fp:
         data = fp.read()
 
-    with open(xyzfilename) as fd:
+    with open(xyz_coord_filename) as fd:
         data2 = fd.read()
 
         data += '\n'
@@ -42,7 +42,7 @@ def VEHICLe_string_to_com(dataframe):
         row=dataframe[dataframe.Smiles == a]
         Regid=row.Regid.item()
         todays_date=date.today()
-        xyzfilename ='xyz_files/' + str(Regid) + '.xyz'
+        xyz_coord_filename ='txt_files/' + str(Regid) + '_xyzcoords.txt'
         comfilename ='neutral_comfiles/' + str(Regid) + '_' + str(todays_date) + '_wb97xd_631gd_opt.com'
         chkfilename= str(Regid) + '_' + str(todays_date) + '_wb97xd_631gd_opt.chk'
         print(comfilename)
@@ -61,7 +61,7 @@ def VEHICLe_string_to_com(dataframe):
             xyz_list = xyz.tolist()
 
         match_coords = zip(type_array, xyz_list)
-        write_xyz_from_type_array(xyzfilename, match_coords)
+        xyzcoords_from_type_array(xyz_coord_filename, match_coords)
         write_gaussian_command_with_regid(Regid, chkfilename)
-        com_from_xyz(xyzfilename)
+        com_from_xyz_coords(xyz_coord_filename, comfilename)
 

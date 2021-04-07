@@ -1,7 +1,6 @@
 from datetime import date
 
-def xyz_from_type_array(filename, zipped_type_array):
-    print('This function needs a fix: needs to include charge and number of atoms in the writing of the xyz file')
+def xyzcoords_from_type_array(filename, zipped_type_array):
     Atoms = {1: 'H', 6: 'C', 7: 'N', 8: 'O', 16: 'S'}
     with open(filename, 'w') as f:
         for i in zipped_type_array:
