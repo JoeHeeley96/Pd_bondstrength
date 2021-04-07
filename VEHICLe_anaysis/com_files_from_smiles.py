@@ -45,7 +45,7 @@ def VEHICLe_string_to_com(dataframe):
         xyz_coord_filename ='txt_files/' + str(Regid) + '_xyzcoords.txt'
         comfilename ='neutral_comfiles/' + str(Regid) + '_' + str(todays_date) + '_wb97xd_631gd_opt.com'
         chkfilename= str(Regid) + '_' + str(todays_date) + '_wb97xd_631gd_opt.chk'
-        print(comfilename)
+        #print(comfilename)
 
         x = read_mol_from_smiles(a)
         y = Chem.AddHs(x)
