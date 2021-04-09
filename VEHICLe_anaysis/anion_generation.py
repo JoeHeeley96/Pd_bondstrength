@@ -1,6 +1,7 @@
 
 
 def anion_from_com(comfilename):
+    ### If we rewrite this we can make sure that only H's bound to carbons are stripped! ###
     split = comfilename.split('\\')
     name = split[1].split('_')
     with open(comfilename) as f:
@@ -27,3 +28,6 @@ def anion_from_com(comfilename):
                                     print('-1 1', file =p)
                                 elif line != k:
                                     print(line.strip('\n'), file=p)
+
+def anions_from_smiles(dataframe, neutral_comfilename):
+    print('not written yet. Use getneighbors() to find Hs only attached to Cs and the use rdgid to find comfile and to strip out those coords')
