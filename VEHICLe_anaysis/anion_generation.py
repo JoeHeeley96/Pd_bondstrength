@@ -1,7 +1,6 @@
 import glob
 from rdkit import Chem
 from rdkit.Chem import AllChem
-import numpy as np
 from datetime import date
 
 def anion_from_com(comfilename):
@@ -38,11 +37,11 @@ def anions_from_smiles(dataframe):
     regid = dataframe['Regid']
 
     for l in regid:
+        comfiles = glob.glob('neutral_comfiles/' + str(l) + '_*')
+        index_file = glob.glob('txt_files/' + str(l) + '_indexing.txt')
         H_index_list = []
         C_index_list = []
         C_numbering = []
-        comfiles = glob.glob('neutral_comfiles/' + str(l) + '_*')
-        index_file = glob.glob('txt_files/' + str(l) + '_indexing.txt')
         row = dataframe[dataframe.Regid == l]
         smiles = row.Smiles.item()
 
@@ -73,18 +72,22 @@ def anions_from_smiles(dataframe):
             split = file.split('\\')
             name = split[1].split('_')
             for m in index_file:
-                for n, o in match_Cnum_Cindex:
+                for n in match_Cnum_Cindex:
                     with open(m) as p:
                         for line in p:
-                            comindex = line[2]
-                            if str(n) == comindex:
-                                xyz=line[4:]
-                                anion_comfilename = 'TEST/' + name[0] + '_' + str(o) + 'anion_' + todays_date + '_' + name[2] + '-' + name[3] + '_opt.com'
-                                bromine_chkfilename = name[0] + '_' + str(o) + 'anion_' + todays_date + '_' + name[ 2] + '-' + name[3] + '_opt.chk'
+                            comindex = line[2] + line[3]
+                            if float(n[0]) == float(comindex):
+                                xyz = line[4:]
+                                anion_comfilename = 'anion_comfiles/' + name[0] + '_' + str(n[1]) + 'anion_' + todays_date + '_' + name[2] + '-' + name[3] + '_opt.com'
+                                anion_chkfilename = name[0] + '_' + str(n[1]) + 'anion_' + todays_date + '_' + name[ 2] + '-' + name[3] + '_opt.chk'
                                 with open(anion_comfilename, 'w') as q:
                                     with open(file) as f:
                                         for comline in f:
-                                            if str(xyz) in comline:
-                                                pass
-                                            else:
+                                            com_xyz=comline[2:]
+                                            if comline.startswith('%chk='):
+                                                print('%chk=' + anion_chkfilename, file=q)
+                                            elif '0 1' in comline:
+                                                print('-1 1', file=q)
+                                            elif str(xyz).lstrip() != com_xyz:
                                                 print(comline.strip('\n'), file=q)
+

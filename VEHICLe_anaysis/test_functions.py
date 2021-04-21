@@ -13,12 +13,16 @@ from rdkit.Chem import rdmolfiles
 from anion_generation import anions_from_smiles
 from rdkit.Chem import AllChem
 from com_files_from_smiles import write_indexfile
+from VEHICLe_filters import nitrogen_only_filter
+from workflow import vehicle_workflow
+from bromine_generation import bromines_from_smiles
 
 VEHICLe=pd.read_csv('VEHICLe.csv')
 
-VEHICLe_1=VEHICLe[:2]
+bromines=glob.glob('bromine_comfiles/*')
+anions=glob.glob('anion_comfiles/*')
+neutrals=glob.glob('neutral_comfiles/*')
 
-anions_from_smiles(VEHICLe_1)
 
 
 

@@ -1,17 +1,15 @@
 from xyzfile_generation import xyz_from_com
-from xyz2mol import xyz2mol
 from datetime import date
 import glob
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
+
 def bromine_check(bromine_comfilename):
     xyz_from_com(bromine_comfilename)
 
 
-
 def bromines_from_com(comfilename):
-    ### Probelm with this approach is that you end up appending a Br to each carbon, despite the nature of the atom in question (eg/ quaternary, carbonyl etc)
     split = comfilename.split('\\')
     name = split[1].split('_')
 
@@ -19,7 +17,6 @@ def bromines_from_com(comfilename):
 
         C_num = []
         C_coord = []
-        Atoms=[]
         for line in f:
             if 'C' in line:
                 C_coord.append(line)
@@ -30,10 +27,8 @@ def bromines_from_com(comfilename):
         num_C_coords = zip(C_num, C_coord)
 
         for j, k in num_C_coords:
-            bromine_xyzfilename = name[0] + str(j) + 'bromine.xyz'
             bromine_comfilename = name[0] + '_' + str(j) + 'bromine_' + name[1] + '_' + name[2] + '_' + name[3] + '_' + name[4]
             bromine_chkfilename = name[0] + '_' + str(j) + 'bromine_' + name[1] + '_' + name[2] + '_' + name[3] + '_opt.chk'
-
 
             with open('bromine_comfiles/' + bromine_comfilename, 'w') as p:
                 with open(comfilename) as f:
@@ -50,8 +45,7 @@ def bromines_from_com(comfilename):
                             Br_ycoord = float(exp[2])
                             Br_zcoord = float(exp[3])
                             print(line.strip('\n'), file=p)
-                            print('Br', (Br_xcoord), (Br_ycoord), (Br_zcoord + 2.0), file=p)
-
+                            print('Br', Br_xcoord, Br_ycoord, Br_zcoord + 2.0, file=p)
 
                         else:
                             print(line.strip('\n'), file=p)
@@ -63,46 +57,43 @@ def bromine_comfiles_from_xyz(xyzfilename):
     name = split[1].split('_')
 
     with open(xyzfilename) as f:
-            C_num = []
-            C_coord = []
-            for line in f:
-                if 'C' in line:
-                    C_coord.append(line)
+        C_num = []
+        C_coord = []
+        for line in f:
+            if 'C' in line:
+                C_coord.append(line)
 
-            for i in range(len(C_coord)):
-                C_num.append(i + 1)
+        for i in range(len(C_coord)):
+            C_num.append(i + 1)
 
-            num_C_coords = zip(C_num, C_coord)
+        num_C_coords = zip(C_num, C_coord)
 
-            for j, k in num_C_coords:
-                bromine_xyzfilename = name[0] + '_' + str(j) + 'bromine_' + todays_date + '.xyz'
-                bromine_comfilename = name[0] + '_' + str(j) + 'bromine_' + todays_date + '_wb97xd_631gd_opt.com'
-                bromine_chkfilename = name[0] + '_' + str(j) + 'bromine_' + todays_date + '_wb97xd_631gd_opt.chk'
+        for j, k in num_C_coords:
+            bromine_xyzfilename = name[0] + '_' + str(j) + 'bromine_' + todays_date + '.xyz'
 
-                with open('xyz_files/' + bromine_xyzfilename, 'w') as p:
-                    with open(xyzfilename) as f:
-                        for line in f:
-                            ### How do we change the charge from here? ##
+            with open('xyz_files/' + bromine_xyzfilename, 'w') as p:
+                with open(xyzfilename) as f:
+                    for line in f:
+
+                        if line == k:
+                            exp = line.split(' ')
+                            Br_zcoord = float(exp[3])
+                            print(line.strip('\n'), file=p)
+                            print('Br', exp[1], exp[2], (Br_zcoord + 2.0), file=p)
+
+                        else:
+                            print(line.strip('\n'), file=p)
 
 
-                            if line == k:
-                                exp = line.split(' ')
-                                Br_zcoord = float(exp[3])
-                                print(line.strip('\n'), file=p)
-                                print('Br', exp[1], exp[2], (Br_zcoord + 2.0), file=p)
-
-                            else:
-                                print(line.strip('\n'), file=p)
 def bromines_from_smiles(dataframe):
-    print('turn me into a module you fat cow')
-    regid = VEHICLe_1['Regid']
+    regid = dataframe['Regid']
 
     for l in regid:
         C_index_list = []
         C_numbering = []
         comfiles = glob.glob('neutral_comfiles/' + str(l) + '_*')
         index_file = glob.glob('txt_files/' + str(l) + '_indexing.txt')
-        row = VEHICLe[VEHICLe.Regid == l]
+        row = dataframe[dataframe.Regid == l]
         smiles = row.Smiles.item()
 
         mol = Chem.MolFromSmiles(smiles)
@@ -112,10 +103,9 @@ def bromines_from_smiles(dataframe):
 
         for j, atoms in enumerate(a):
             b = atoms.GetAtomicNum()
-            d = atoms.GetIdx()
             if b == 1:
                 e = atoms.GetNeighbors()
-                for j, k in enumerate(e):
+                for h, k in enumerate(e):
                     if k.GetAtomicNum() == 6:
                         if str(k.GetHybridization()) == 'SP2':
                             C_index = k.GetIdx()
@@ -125,7 +115,6 @@ def bromines_from_smiles(dataframe):
             C_numbering.append(x + 1)
 
         match_Cnum_Cindex = zip(C_index_list, C_numbering)
-        ### Use same numbering systen in anion generation ###
 
         for file in comfiles:
             todays_date = str(date.today())
@@ -159,7 +148,6 @@ def bromines_from_smiles(dataframe):
                                         elif Br_coords in comline:
                                             print(comline.strip('\n'), file=q)
                                             print('Br', Br_xcoord, Br_ycoord, (Br_zcoord + 2), file=q)
-
 
                                         else:
                                             print(comline.strip('\n'), file=q)
