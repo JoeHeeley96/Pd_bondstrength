@@ -98,7 +98,6 @@ def bromines_from_smiles(dataframe):
     regid = dataframe['Regid']
 
     for l in regid:
-        print('-------')
         C_index_list = []
         C_numbering = []
         comfiles = glob.glob('neutral_comfiles/' + str(l) + '_*')
@@ -132,7 +131,6 @@ def bromines_from_smiles(dataframe):
             split = file.split('\\')
             name = split[1].split('_')
             for m in index_file:
-                print(l, index_file)
                 for n, o in match_Cnum_Cindex:
                     with open(m) as p:
                         for line in p:
@@ -148,9 +146,9 @@ def bromines_from_smiles(dataframe):
                                 Br_coords = (str(Br_xcoord) + ' ' + str(Br_ycoord) + ' ' + str(Br_zcoord))
 
                         with open(bromine_comfilename, 'w') as q:
-                            print(l, bromine_comfilename)
                             with open(file) as f:
                                 for comline in f:
+                                    split=comline.split()
 
                                     if comline.startswith('%chk='):
                                         print('%chk=' + bromine_chkfilename, file=q)
@@ -159,8 +157,13 @@ def bromines_from_smiles(dataframe):
                                         print('1 1', file=q)
 
                                     elif Br_coords in comline:
-                                        print(comline.strip('\n'), file=q)
-                                        print('Br', Br_xcoord, Br_ycoord, (Br_zcoord + 2), file=q)
+                                        comsplit=comline.split()
+                                        if Br_xcoord == float(comsplit[1]):
+                                            if Br_ycoord == float(comsplit[2]):
+                                                if Br_zcoord == float(comsplit[3]):
+                                                    print(Br_xcoord, Br_ycoord, Br_zcoord, comsplit)
+                                                    print(comline.strip('\n'), file=q)
+                                                    print('Br', Br_xcoord, Br_ycoord, (Br_zcoord + 2), file=q)
 
                                     else:
                                         print(comline.strip('\n'), file=q)

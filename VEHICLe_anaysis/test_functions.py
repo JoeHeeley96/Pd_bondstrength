@@ -22,7 +22,9 @@ S1773=nitrogen_only[nitrogen_only.Regid == 'S1773']
 
 S123_S13281=nitrogen_only[38:40]
 
-bromines_from_smiles(S123_S13281)
+S13282=nitrogen_only[40:41]
+
+bromines_from_smiles(S13282)
 
 
 
