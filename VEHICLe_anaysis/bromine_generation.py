@@ -1,5 +1,3 @@
-from xyzfile_generation import xyz_from_com
-from xyz2mol import xyz2mol
 from datetime import date
 import glob
 from rdkit import Chem
