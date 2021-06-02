@@ -126,7 +126,6 @@ def bromines_from_smiles(dataframe):
         match_Cnum_Cindex = zip(C_index_list, C_numbering)
 
         for file in comfiles:
-            print(l, file)
             todays_date = str(date.today())
             split = file.split('\\')
             name = split[1].split('_')
@@ -161,7 +160,6 @@ def bromines_from_smiles(dataframe):
                                         if Br_xcoord == float(comsplit[1]):
                                             if Br_ycoord == float(comsplit[2]):
                                                 if Br_zcoord == float(comsplit[3]):
-                                                    print(Br_xcoord, Br_ycoord, Br_zcoord, comsplit)
                                                     print(comline.strip('\n'), file=q)
                                                     print('Br', Br_xcoord, Br_ycoord, (Br_zcoord + 2), file=q)
 
