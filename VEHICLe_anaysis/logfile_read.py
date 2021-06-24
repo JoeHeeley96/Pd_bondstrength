@@ -17,6 +17,8 @@ def energy_readdata(file_locations, outname):
         date=[]
         structure=[]
         RegId = []
+        theory=[]
+        calc=[]
 
         list_of_files=glob.glob(file_locations + '/*')
         for file in list_of_files:
@@ -26,12 +28,14 @@ def energy_readdata(file_locations, outname):
                 x = file.split('\\')
                 z = x[1].split('_')
                 RegId.append(z[0])
-                print('WARNING: CHECK THIS LOOP IT HASNT BEEN TESTED')
-                if z[1].str.contains('*anion'):
+                theory.append(z[3])
+                calc.append(z[-1])
+
+                if 'anion' in z[1]:
                     structure.append(z[1])
                     date.append(z[2])
-                elif z[1].str.contains('*bromine'):
-                    structure.append(z[2])
+                elif 'bromine' in z[1]:
+                    structure.append(z[1])
                     date.append(z[2])
 
                 else:
@@ -43,7 +47,7 @@ def energy_readdata(file_locations, outname):
 
 
 
-        dict = {'Regid': RegId, 'Structure': structure, 'Energy': energies, 'Date': date}
+        dict = {'Regid': RegId, 'Structure': structure, 'Energy': energies, 'Date': date, 'Functional/basisset': theory, 'Calculation': calc}
         data = pd.DataFrame(dict)
 
         with open(outname, 'w') as y:
@@ -84,3 +88,5 @@ def energy_readreferences(reference_locations):
 
     with open('reference_calcs.csv', 'w') as y:
         print(Reference_df.to_csv(sep=','), file=y)
+
+

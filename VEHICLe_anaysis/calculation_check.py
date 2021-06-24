@@ -3,5 +3,4 @@ def opt_check(file, string_to_search):
         for line in f:
             if string_to_search in line:
                 return True
-    print()
     return False
