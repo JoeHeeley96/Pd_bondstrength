@@ -23,5 +23,5 @@ def print_smiles_to_gridimage(dataframe, outname, n=None):
 
     for j, k in enumerate(slice_list):
         mol_slice = mol_list[(k - n):k]
-        img = Draw.MolsToGridImage(mol_slice, molsPerRow=5)
+        img = Draw.MolsToGridImage(mol_slice, molsPerRow=10)
         img.save(outname + str(j + 1) + '.png')
