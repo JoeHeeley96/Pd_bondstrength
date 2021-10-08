@@ -79,7 +79,7 @@ def VEHICLe_string_to_com(dataframe):
 
         x = read_mol_from_smiles(a)
         y = Chem.AddHs(x)
-        z=y.GetAtoms
+        z = y.GetAtoms
 
         coords_2d = AllChem.Compute2DCoords(y)
         type_array = np.zeros(y.GetNumAtoms(), dtype=np.int32)

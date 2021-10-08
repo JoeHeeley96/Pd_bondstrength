@@ -10,16 +10,15 @@ def xyzcoords_from_type_array(filename, zipped_type_array):
                     print(atom, *i[2], file=f)
 
 def xyz_from_com(comfilename):
-    todays_date = date.today()
     split = comfilename.split('\\')
-    name = split[1].split('_')
+    name = split[1].split('.')
 
     with open(comfilename) as p:
         xyz=[]
         read = p.readlines()[5:]
         remove_command=read[1:] ### Why did I do this? ###
         charge_multip= read[0]
-        charge=list(charge_multip)[0]
+        charge = int(charge_multip[0] + charge_multip[1])
 
 
         for line in remove_command:
@@ -29,8 +28,8 @@ def xyz_from_com(comfilename):
                 xyz.append(line.strip('\n'))
         numatoms= len(xyz)
 
-        with open('xyz_files/' + name[0] +'_' + str(todays_date) + '_' + name[1] + '.xyz', 'w') as g:
-            print(numatoms,'\n', 'charge=' + charge + '=', file=g, sep='')
+        with open('xyzfiles/' + name[0] + '.xyz', 'w') as g:
+            print(numatoms,'\n', 'charge=' + str(charge) + '=', file=g, sep='')
 
             for x in xyz:
                 line=str(x)

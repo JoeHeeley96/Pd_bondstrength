@@ -2,7 +2,6 @@ import pandas as pd
 
 
 def calculate_properties(dataset, outname):
-
     regId = list(set(dataset.Regid))
     property_data=pd.DataFrame(columns=['Regid'])
 

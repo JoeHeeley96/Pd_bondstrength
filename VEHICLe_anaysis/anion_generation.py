@@ -47,7 +47,7 @@ def anions_from_smiles(dataframe):
                     with open(m) as p:
                         for line in p:
                             comindex = line[2] + line[3]
-                            if float(n) == float(comindex):
+                            if float(n[0]) == float(comindex):
                                 xyz = line[4:]
                                 anion_comfilename = 'anion_comfiles/' + name[0] + '_' + str(n[1]) + 'anion_' + todays_date + '_' + name[2] + '-' + name[3] + '_opt.com'
                                 anion_chkfilename = name[0] + '_' + str(n[1]) + 'anion_' + todays_date + '_' + name[ 2] + '-' + name[3] + '_opt.chk'
@@ -57,7 +57,7 @@ def anions_from_smiles(dataframe):
                                             com_xyz=comline[2:]
                                             if comline.startswith('%chk='):
                                                 print('%chk=' + anion_chkfilename, file=q)
-                                            elif '0 1' in comline:
+                                            elif '0 1\n' in comline:
                                                 print('-1 1', file=q)
                                             elif str(xyz).lstrip() != com_xyz:
                                                 print(comline.strip('\n'), file=q)

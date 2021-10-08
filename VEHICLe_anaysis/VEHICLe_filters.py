@@ -3,6 +3,7 @@ from rdkit import Chem
 import pandas as pd
 from VEHICLe_read import read_list_of_mol_objects
 from print_file import print_to_csv
+from rdkit.Chem import Draw
 
 def nonetype_filter(dataframe):
     for i in read_list_of_mol_objects(dataframe):
@@ -103,3 +104,55 @@ def NCN_filter(dataframe, export):
 
     if export == 'yes':
         print_to_csv(filtered_data, 'NCN')
+
+def fulldata_filter(VEHICLe_dataframe, fulldata_dataframe, outname):
+    regid = list(set(fulldata_dataframe.Regid))
+    structures=[]
+    for i in regid:
+        acidities = {}
+        elec_affs = {}
+        relative_acidities = []
+        relative_electro_affs = []
+
+        df = fulldata_dataframe.loc[fulldata_dataframe['Regid'] == i]
+        for j in df.columns:
+            if 'anion' in j:
+                acidities[j] = float(df[j].values)
+            elif 'bromine' in j:
+                elec_affs[j] = float(df[j].values)
+
+        for m, c in acidities.items():
+            if c == (min(acidities.values())):
+                relative_acidities.append(
+                    24.038503 / c) if 24.038503 / c not in relative_acidities else relative_acidities
+                acidic_position = list(m.split('_')[0])
+
+                if len(relative_acidities) == 1:
+                    break
+
+        for f, l in elec_affs.items():
+            if l == max(elec_affs.values()):
+                relative_electro_affs.append(
+                    l / 183.651714) if l / 183.651714 not in relative_electro_affs else relative_electro_affs
+                nucleophilic_position = list(f.split('_')[0])
+
+        if len(relative_acidities) != len(relative_electro_affs):
+            print('There is a problem with: ', i, 'please check!')
+
+        #if (relative_acidities[0] < 1.0) and 0.5 <= relative_electro_affs[0] <= 0.7:
+        print(i, 'acidic position is:', acidic_position[0], 'with relative acidity:', relative_acidities,
+                                      'nucleophilic position is:', nucleophilic_position[0],
+                                            'with relative electrophile affinity:', relative_electro_affs)
+        structures.append(i)
+
+    mol_list = []
+    for i in structures:
+        row = VEHICLe_dataframe[VEHICLe_dataframe['Regid'].str.fullmatch(i)]
+        for j in row.Smiles.values:
+            mol = Chem.MolFromSmiles(j)
+            mol_list.append(mol)
+        img = Draw.MolsToGridImage(mol_list, molsPerRow=5, legends=[x for x in structures])
+        img.save(outname + '.png')
+
+
+
