@@ -11,19 +11,21 @@ from plots import plot_activation_map
 
 def comfile_generation_workflow(dataframe):
     VEHICLe_string_to_com(dataframe)
-    anions_from_smiles(datframe)
-    bromines_from_smiles(datframe)
+    anions_from_smiles(dataframe)
+    bromines_from_smiles(dataframe)
 
-def property_calculate_workflow(filelocations, calc_check, plot_map):
-    if calc_check != 'no':
+def property_calculate_workflow(filelocations, outname, calc_check=True, plot_map=False, write=True):
+
+    if calc_check:
         files = glob.glob(filelocations + '/*')
-        if opt_check(i, 'SCF Done'):
-            pass
-        else:
-            print('Error! SCF not found in file: ', i)
+        for i in files:
+            if opt_check(i, 'SCF Done'):
+                pass
+            else:
+                print('Error! SCF not found in file: ', i)
 
-    energy_readdata(filelocations, 'Nonly_rawdata.csv')
-    calculate_properties(pd.read_csv('Nonly_rawdata.csv'), 'VEHICLe_NOnly_fulldata.csv')
+    energy_readdata(filelocations, outname=(outname + '_rawdata.csv'), write=write)
+    calculate_properties(pd.read_csv(outname + '_rawdata.csv'), outname=(outname + '_fulldata.csv'), write=write)
 
-    if plot_map != 'no':
-        plot_activation_map(pd.read_csv('VEHICLe_Nonly_fulldata.csv'), 'Nonly_activation_map.png')
+    if plot_map:
+        plot_activation_map(pd.read_csv(outname + '_fulldata.csv'), outname + '_activation_map.png')

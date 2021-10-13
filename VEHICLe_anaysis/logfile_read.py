@@ -11,7 +11,7 @@ def g16_scfread(file):
 
     return energy
 
-def energy_readdata(file_locations, outname):
+def energy_readdata(file_locations, outname, write=True):
 
         energies = []
         date=[]
@@ -45,48 +45,12 @@ def energy_readdata(file_locations, outname):
             else:
                 print(file, 'Energy not found')
 
-
-
         dict = {'Regid': RegId, 'Structure': structure, 'Energy': energies, 'Date': date, 'Functional/basisset': theory, 'Calculation': calc}
         data = pd.DataFrame(dict)
 
-        with open(outname, 'w') as y:
-            print(data.to_csv(sep=','), file=y)
+        if write:
+            with open(outname, 'w') as f:
+                print(data.to_csv(sep=','), file=f)
 
-
-def energy_readreferences(reference_locations):
-    Ref_E = []
-    ExpNo = []
-    functional = []
-    basisset = []
-    structure = []
-    calctype = []
-
-    for ref in reference_locations:
-        ref_file = glob.glob(ref + '/*')
-        for file in ref_file:
-            refs = g16_scfread(file)
-            if refs != -404:
-                Ref_E.append(refs)
-
-                x = file.split('\\')
-                z = x[1].split('_')
-                ExpNo.append(z[1])
-                functional.append(z[-3])
-                basisset.append(z[-2])
-                structure.append(z[-4])
-                calctype.append(z[-1])
-            else:
-                print(file, 'Energy not found')
-
-    ref_dict = {'Energy': Ref_E, 'ExpNo': ExpNo, 'Functional': functional, 'Basis Set': basisset,
-                'Calculation': calctype,
-                'Structure': structure}
-
-    global Reference_df
-    Reference_df = pd.DataFrame(ref_dict)
-
-    with open('reference_calcs.csv', 'w') as y:
-        print(Reference_df.to_csv(sep=','), file=y)
-
+        return data
 
