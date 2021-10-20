@@ -23,33 +23,11 @@ def beilstein_filter(dataframe, export):
 
     return beilstein_filtered
 
-def atom_filter(dataframe, export):
-    filtered_data=pd.DataFrame({})
+def dj1_filter(dataframe, export):
+    '''
+    apply this to the VEHICLe dataframe to get the dj1 dataset
+    '''
 
-    for i in dataframe:
-        filtered_data[i] = i
-
-    for j in range(len(dataframe)):
-        row = dataframe.iloc[j]
-        smiles = row['Smiles']
-        mol = Chem.MolFromSmiles(smiles)
-        type_array = np.zeros(mol.GetNumAtoms(), dtype=np.int32)
-
-        for j, atoms in enumerate(mol.GetAtoms()):
-            type_array[j] = atoms.GetAtomicNum()
-
-        if np.count_nonzero(type_array == 6, axis=0) >0:
-            if np.count_nonzero(type_array == 7, axis=0) <=4:
-                if np.count_nonzero(type_array == 8, axis=0) <=4:
-                    if np.count_nonzero(type_array == 16, axis=0) <=4:
-                        filtered_data = filtered_data.append(row, ignore_index=True)
-
-    if export == 'yes':
-        print_to_csv(filtered_data, 'Atom_filter')
-
-    return filtered_data
-
-def nitrogen_only_filter(dataframe, export):
     filtered_data = pd.DataFrame({})
 
     for i in dataframe:
@@ -61,8 +39,8 @@ def nitrogen_only_filter(dataframe, export):
         mol = Chem.MolFromSmiles(smiles)
         type_array = np.zeros(mol.GetNumAtoms(), dtype=np.int32)
 
-        for j, atoms in enumerate(mol.GetAtoms()):
-            type_array[j] = atoms.GetAtomicNum()
+        for x, atoms in enumerate(mol.GetAtoms()):
+            type_array[x] = atoms.GetAtomicNum()
 
         if np.count_nonzero(type_array == 6, axis=0) > 0:
             if np.count_nonzero(type_array == 7, axis=0) <= 4:
@@ -72,6 +50,37 @@ def nitrogen_only_filter(dataframe, export):
 
     if export == 'yes':
         print_to_csv(filtered_data, 'Nitrogen_only')
+
+def dj2_filter(dataframe, write=True):
+
+    filtered_data = pd.DataFrame({})
+
+    for i in dataframe:
+        filtered_data[i] = i
+
+    for j in range(len(dataframe)):
+        row = dataframe.iloc[j]
+        smiles = row['Smiles']
+        mol = Chem.MolFromSmiles(smiles)
+        Hmol = Chem.AddHs(mol)
+        type_array = np.zeros(Hmol.GetNumAtoms(), dtype=np.int32)
+
+        for j, atoms in enumerate(Hmol.GetAtoms()):
+            type_array[j] = atoms.GetAtomicNum()
+
+        if np.count_nonzero(type_array == 6, axis=0) >0:
+            if np.count_nonzero(type_array == 1, axis=0) >0:
+                if np.count_nonzero(type_array == 7, axis=0) <=4:
+                    if np.count_nonzero(type_array == 8, axis=0) <=4:
+                        if np.count_nonzero(type_array == 16, axis=0) <=4:
+                            filtered_data = filtered_data.append(row, ignore_index=True)
+
+    if write:
+        with open('dj2.csv', 'w') as f:
+            print(filtered_data.to_csv(sep=','), file=f)
+
+    return filtered_data
+
 
 
 def NCN_filter(dataframe, export):

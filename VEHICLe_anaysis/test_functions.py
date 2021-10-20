@@ -9,7 +9,6 @@ from rdkit.Chem import rdchem
 from rdkit.Chem import rdmolfiles
 from anion_generation import anions_from_smiles
 from rdkit.Chem import AllChem
-from VEHICLe_filters import nitrogen_only_filter
 from VEHICLe_filters import NCN_filter
 from plots import plot_activation_map
 import numpy as np
@@ -40,26 +39,28 @@ import pybel as pyb
 from logfile_read import energy_readdata
 from mol_translator import aemol
 from property_calculate import calculate_relative_properties
+from workflow import impression_input_workflow
+from VEHICLe_filters import dj2_filter
 
-VEHICLe_Nonly=pd.read_csv('Nitrogen_only_VEHICLe.csv')
-nonly_fulldata=pd.read_csv('Nonly_fulldata.csv')
+
+VEHICLe = pd.read_csv('VEHICLe.csv')
+dj1=pd.read_csv('dj1.csv')
+dj2=pd.read_csv('dj2.csv')
+dj1_fulldata=pd.read_csv('dj1_fulldata.csv')
 comfiles = glob.glob('neutral_comfiles/*') + glob.glob('anion_comfiles/*') + glob.glob('bromine_comfiles/*')
 logfiles= glob.glob('logfiles/*')
 xyzfiles = glob.glob('xyzfiles/*')
 anion_logfiles = glob.glob('logfiles/*anion*')
 bromine_logfiles = glob.glob('logfiles/*bromine*')
 neutral_logfiles = list(set(logfiles) - set(anion_logfiles) - set(bromine_logfiles))
-sdf_files = glob.glob('aemols/*')
-training_set_first200 = neutral_logfiles[0:200]
-test_set_last55 = neutral_logfiles[200:]
 
-S1035_log = ['logfiles\\S1035_2anion_2021-04-21_wb97xd-631gd_opt.log']
-S1035_xyz = ['xyzfiles\\S1035_2anion_2021-09-30_wb97xd-631gd_opt.xyz']
+#training_set_first200 = neutral_logfiles[0:200]
+#test_set_last55 = neutral_logfiles[200:]
 
-#aemols = logfile_to_aemol(training_set)
-#inputs = write_imp_input(aemols, nonly_fulldata)
+#training_set_every2nd = sorted(neutral_logfiles, key=str)[0::2]
+#test_set_every2nd = sorted(neutral_logfiles, key=str)[1::2]
 
-fmol_fulldata = pd.read_csv('fmols_fulldata.csv')
+#impression_input_workflow(training_set_every2nd, dj1_fulldata, 'dj1_every2nd_train')
+#impression_input_workflow(test_set_every2nd, dj1_fulldata, 'dj1_every2nd_test')
 
-
-
+print(len(dj2))

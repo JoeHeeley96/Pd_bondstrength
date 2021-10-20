@@ -5,29 +5,33 @@ from mol_translator.properties.nmr.nmr_write import write_nmredata
 from tqdm import tqdm
 import os
 
+def logfile_to_aemol(logfiles, write=False, ftype='log'):
 
-def logfile_to_aemol(logfiles, write=False):
-
+    array = np.unique(np.array(logfiles))
     amols = []
-    for file in tqdm(logfiles):
+
+    for file in tqdm(list(array)):
         x = file.split('\\')
         p = x[1].split('_')[0]
-        try:
-            outfile = 'aemols/' + str(p) + '_AEMOL.sdf'
-            if os.path.isfile(outfile):
 
-                amol = aemol(p)
-                amol.from_file(file, ftype='log')
-                amol.prop_fromfile(file, 'g16', 'scf')
+        outfile = 'aemols/' + str(p) + '_AEMOL.sdf'
 
-                assert amol.mol_properties['energy'] < 1000000, print(amol.mol_properties)
+        amol = aemol(p)
+        amol.from_file(file, ftype=ftype)
+        amol.prop_fromfile(file, 'g16', 'scf')
 
-                amol.get_bonds()
-                amol.get_path_lengths()
-        finally:
+        assert amol.mol_properties['energy'] < 1000000, print(amol.mol_properties)
+
+        amol.get_bonds()
+        amol.get_path_lengths()
+
+        if amol not in amols:
             amols.append(amol)
-            if write:
-                write_nmredata(outfile, amol)
+        else:
+            print('amol error', amol.info['molid'])
+        if write:
+            write_nmredata(outfile, amol)
+
     return amols
 
 def xyzfile_to_aemol(xyzfiles, write=False):
@@ -53,12 +57,14 @@ def xyzfile_to_aemol(xyzfiles, write=False):
                 write_nmredata(outfile, amol)
     return amols
 
-def write_imp_input(aemols, fulldata_df):
+def write_imp_input(aemols, fulldata_df, outname, write=True):
     atom_df = dfw.make_atom_df(aemols)
     pair_df = dfw.make_pair_df(aemols)
-    regid = list(set(atom_df.molecule_name))
+
+    regid = list(set(atom_df.molecule_name.unique()))
 
     props=np.zeros(len(atom_df))
+
     for j in regid:
         mol_prop = fulldata_df[fulldata_df['Regid'].str.fullmatch(j)]
         acidities = mol_prop.filter(regex='acidity').values
@@ -89,14 +95,15 @@ def write_imp_input(aemols, fulldata_df):
                     cdf_index = mol_df.loc[mol_df['atom_index'] == x].index.values
                     np.put(props, [cdf_index], [y])
 
-
     atom_df['shift'] = props
-    final_atom_df = atom_df.fillna(1000000000)
+    final_atom_df = atom_df.fillna(0)
 
-    #with open('final_atom_df.csv', 'w') as p:
-    #    print(final_atom_df.to_csv(sep=','), file=p)
+    if write:
 
-    #with open('pair_df.csv', 'w') as f:
-    #    print(pair_df.to_csv(sep=','), file=f)
+        with open(outname + '_atom_df.csv', 'w') as p:
+            print(final_atom_df.to_csv(sep=','), file=p)
+
+        with open(outname + '_pair_df.csv', 'w') as f:
+            print(pair_df.to_csv(sep=','), file=f)
 
     return final_atom_df, pair_df
