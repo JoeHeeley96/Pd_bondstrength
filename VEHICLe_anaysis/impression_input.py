@@ -1,7 +1,7 @@
 import numpy as np
 from mol_translator.imp_converter import dataframe_write as dfw
 from mol_translator.aemol import aemol
-from mol_translator.properties.nmr.nmr_write import write_nmredata
+from mol_translator.structure.structure_write import write_mol_tosdf
 from tqdm import tqdm
 import os
 
@@ -30,7 +30,7 @@ def logfile_to_aemol(logfiles, write=False, ftype='log'):
         else:
             print('amol error', amol.info['molid'])
         if write:
-            write_nmredata(outfile, amol)
+            write_mol_tosdf(amol, outfile)
 
     return amols
 
@@ -54,7 +54,7 @@ def xyzfile_to_aemol(xyzfiles, write=False):
         finally:
             amols.append(amol)
             if write:
-                write_nmredata(outfile, amol)
+                write_mol_tosdf(outfile, amol)
     return amols
 
 def write_imp_input(aemols, fulldata_df, outname, write=True):

@@ -1,28 +1,71 @@
+import numpy as np
+from mol_translator import aemol
+from mol_translator.properties.structure.bond_angle import get_bond_angles
+from mol_translator.properties.structure.dihedral_angle import get_dihedral_angle
+from statistics import mean
+import pandas as pd
+
+def get_dist_array(aemol):
+    num_atoms = len(aemol.structure['types'])
+    dist_array = np.zeros(num_atoms, num_atoms, dtype=np.float64)
+    xyz_array = aemol.structure['xyz']
+    for i in range(num_atoms):
+        for j in range(num_atoms):
+            dist_array[i][j] = np.absolute(np.linalg.norm(xyz_array[i] - xyz_array[j]))
+
+    return dist_array
+
 def output_structure_check(xyzfiles, logfiles):
     '''
-    requires inputs in alphabetical order
+    This function checks the MAE between bond angles
+    for the input and output structures.
+
+    Typically, successful anions range between 0 - 12 (approx)
+    and successful bromines range between 0 - 30 (approx)
+    so any structures with MAE >= 30 are thrown up
+
+    PLEASE CHECK THE STRUCTURES BEFORE DELETING THEM
+
+    If this doesnt work then just change the condition:
+    if np.mean(np.absolute(m-c)) > *set new number here*:
     '''
 
-    for i,j in zip(xyzfiles, logfiles):
+    badfiles = []
+    for i, j in zip(sorted(xyzfiles), sorted(logfiles)):
         in_file = i.split('\\')
         in_split = in_file[1].split('-')
 
         out_file = j.split('\\')
         out_split = out_file[1].split('-')
-        if in_split[0] != out_split[0]:
-            raise NameError('Files dont match')
 
-        input_aemol = aemol(in_file[1].split('_')[0])
-        input_aemol.from_file(i, ftype = 'xyz')
+        if in_split[0] == out_split[0]:
 
-        output_aemol = aemol(in_file[1].split('_')[0])
-        output_aemol.from_file(j, ftype='log')
+            input_aemol = aemol(in_file[1].split('_')[0])
+            input_aemol.from_file(i, ftype = 'xyz')
 
-        input_structure = output_aemol.structure['conn']
-        output_structure = input_aemol.structure['conn']
-        #print(in_split[0])
-        print(input_structure)
-        print(output_structure)
+            output_aemol = aemol(in_file[1].split('_')[0])
+            output_aemol.from_file(j, ftype='log')
 
-        for x,y in zip(input_structure, output_structure):
-            print(np.count_nonzero(x == y))
+            input_structure = get_bond_angles(input_aemol)
+            output_structure = get_bond_angles(output_aemol)
+
+            err = []
+            for x,y in zip(input_structure, output_structure):
+                for m, c in zip(x,y):
+                    mnan = np.asarray([0 if x != x else x for x in m])
+                    cnan = np.asarray([0 if x != x else x for x in c])
+                    if 'anion' in i:
+                        if np.mean(np.absolute(mnan-cnan)) > 35.0:
+                            err.append(np.mean(np.absolute(mnan-cnan)))
+                    elif 'bromine' in i:
+                        if np.mean(np.absolute(mnan-cnan)) > 40.0:
+                            err.append(np.mean(np.absolute(mnan-cnan)))
+
+            if len(err) > 0:
+                badfiles.append(j)
+
+        else:
+            print('uh oh spaghettios', i, j)
+
+    print('Large variances detected in ', len(badfiles), ' output structures:', badfiles)
+    return badfiles
