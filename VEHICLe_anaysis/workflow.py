@@ -1,33 +1,41 @@
 import glob
 import pandas as pd
-from neutral_generation import VEHICLe_string_to_com
+from neutral_generation import basehet_from_smiles
 from anion_generation import anions_from_smiles
 from bromine_generation import bromines_from_smiles
 from logfile_read import energy_readdata
-from calculation_check import opt_check
+from calculation_check import opt_check, output_structure_check
 from property_calculate import calculate_properties
 from plots import plot_activation_map
 from impression_input import logfile_to_aemol, write_imp_input
-from structure_check import output_structure_check
 from sampling import get_tm_df, get_fps_ids
-
+from calculation_check import comfile_check
 
 def comfile_generation_workflow(dataframe):
-    VEHICLe_string_to_com(dataframe)
-    print('do you need to write the index files here?')
+    basehet_from_smiles(dataframe)
     anions_from_smiles(dataframe)
     bromines_from_smiles(dataframe)
+
+    comfiles = glob.glob('neutral_comfiles/*') + glob.glob('anion_comfiles/*') + glob.glob('bromine_comfiles/*')
+    regids = dataframe['Regid']
+    for i in comfiles:
+        with open(i, 'a') as f:
+            f.write('\n\n')
+            f.close()
+    comfile_check(comfiles=comfiles, sampled_structures=regids)
 
 def logfile_analysis_workflow(filelocations, outname, calc_check=True, calc_data=True, plot_map=False, write=True):
 
     if calc_check:
+        failed_runs = []
         files = glob.glob(filelocations + '/*')
         xyzfiles = glob.glob('xyzfiles/*')
         for i in files:
             if opt_check(i, 'Error'):
                 print('Failed run: ', i)
+                failed_runs.append(i)
 
-        output_structure_check(xyzfiles=xyzfiles, logfiles=files)
+        bad_structures = output_structure_check(xyzfiles=xyzfiles, logfiles=files, failed_runs=failed_runs)
 
     if calc_data:
         read_data = energy_readdata(filelocations, outname=(outname + '_rawdata.csv'), write=write)
@@ -36,6 +44,7 @@ def logfile_analysis_workflow(filelocations, outname, calc_check=True, calc_data
     if plot_map:
         plot_activation_map(pd.read_csv(outname + '_fulldata.csv'), outname + '_activation_map.png')
 
+    return failed_runs, bad_structures
 
 def impression_input_workflow(logfiles, fulldata_df, outname, write=True):
 
@@ -75,3 +84,20 @@ def logfile_fingerprint_sampling_workflow(neutral_logfiles, training_structures,
 
     return fpsample
 
+
+def vehicle_fingerprint_sampling_workflow(vehicle_dataframe, outname, num=100, write=True):
+
+    sampled_dataframe = pd.DataFrame([])
+    regids = vehicle_dataframe['Regid']
+    tm_df_array = get_tm_df(training_structures=regids, vehicle_df=vehicle_dataframe)
+    fpsample = get_fps_ids(tm_df=tm_df_array[0], tm_array=tm_df_array[1], num=num, outname=outname, write=write)
+
+    for i in fpsample:
+        row = vehicle_dataframe[vehicle_dataframe.Regid == i]
+        sampled_dataframe = sampled_dataframe.append(row)
+
+    if write:
+        with open(outname + str(num) +'.csv', 'w') as f:
+            print(sampled_dataframe.to_csv(sep=','), file=f)
+
+    return sampled_dataframe

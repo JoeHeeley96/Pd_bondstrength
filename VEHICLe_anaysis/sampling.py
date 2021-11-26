@@ -81,7 +81,7 @@ def get_tm_df(training_structures, vehicle_df):
 
     names = []
     ecfps = []
-    for j in training_structures:
+    for j in tqdm(training_structures):
         smiles = vehicle_df.loc[vehicle_df['Regid'] == j].Smiles.item()
         mol = Chem.MolFromSmiles(smiles)
         molH = Chem.AddHs(mol)
@@ -90,7 +90,7 @@ def get_tm_df(training_structures, vehicle_df):
         ecfps.append(fp)
 
     tm_array = np.zeros(shape=(len(names), len(names)), dtype='float32')
-    for i1, (id1, fp1) in enumerate(zip(names, ecfps)):
+    for i1, (id1, fp1) in tqdm(enumerate(zip(names, ecfps))):
         for i2, (id2, fp2) in enumerate(zip(names, ecfps)):
             tm_array[i1][i2] = DataStructs.FingerprintSimilarity(fp1, fp2)
 
@@ -98,7 +98,7 @@ def get_tm_df(training_structures, vehicle_df):
 
     return tm_df, tm_array
 
-def get_fps_ids(tm_df, tm_array, outname, num=[], write=False):
+def get_fps_ids(tm_df, tm_array, outname, num=100, write=False):
     '''
     :param tm_df: output [0] from get_tm_df
     :param tm_array: output [1] from get_tm_df
@@ -107,34 +107,33 @@ def get_fps_ids(tm_df, tm_array, outname, num=[], write=False):
     :return: list of len(num) of structures to sample,
                 also writes the list as a .txt file if write=True
     '''
-    #pbar = tqdm(total=max(num))
+    pbar = tqdm(total=num)
     selected = list(np.random.choice(tm_df.molecule_name.unique(), 1))
-    #for molid in selected:
-        #pbar.update(1)
+    for molid in selected:
+        pbar.update(1)
 
-    for i in num:
-        while len(selected) < i:
-            selected_ids = [x in selected for x in tm_df.molecule_name.values]
-            big_d = 0.0
-            to_pick = ''
-            tm_array = tm_array
-            for molid in tm_df.molecule_name.unique():
-                if molid in selected:
-                    continue
-                id1 = tm_df.loc[(tm_df.molecule_name == molid)].index.values[0]
-                distance = np.sum(tm_array[id1][selected_ids])
-                if distance > big_d:
-                    big_d = distance
-                    to_pick = molid
-            #pbar.update(1)
-            selected.append(to_pick)
+    while len(selected) < num:
+        selected_ids = [x in selected for x in tm_df.molecule_name.values]
+        big_d = 0.0
+        to_pick = ''
+        tm_array = tm_array
+        for molid in tm_df.molecule_name.unique():
+            if molid in selected:
+                continue
+            id1 = tm_df.loc[(tm_df.molecule_name == molid)].index.values[0]
+            distance = np.sum(tm_array[id1][selected_ids])
+            if distance > big_d:
+                big_d = distance
+                to_pick = molid
+        pbar.update(1)
+        selected.append(to_pick)
 
-        print('selected', len(selected), 'structures')
+    print('selected', len(selected), 'structures')
 
-        if write:
-            with open(outname + str(i) + '.txt', 'w') as f:
-                for j, molid in enumerate(selected):
-                    string = "{0:<10d}\t,\t{1:<10s}".format(j, molid)
-                    print(molid, file=f)
+    if write:
+        with open(outname + str(num) + '.txt', 'w') as f:
+            for j, molid in enumerate(selected):
+                string = "{0:<10d}\t,\t{1:<10s}".format(j, molid)
+                print(molid, file=f)
 
     return selected

@@ -2,14 +2,22 @@ from datetime import date
 import glob
 from rdkit import Chem
 from rdkit.Chem import AllChem
+from tqdm import tqdm
+import glob
 
 
-def bromines_from_smiles(dataframe):
+def bromines_from_smiles(dataframe, het_conn=False):
+
+    print('PLEASE NOTE: If you are using bromine_generation.bromines_from_smiles outside of '
+          'workflow.comfile_generation_workflow you need to append blank lines to all generated comfiles')
+
     regid = dataframe['Regid']
 
-    for l in regid:
+    for l in tqdm(regid):
+        het_conn = False
         C_index_list = []
         C_numbering = []
+        Het_index = []
         comfiles = glob.glob('neutral_comfiles/' + str(l) + '_*')
         index_file = glob.glob('txt_files/' + str(l) + '_indexing.txt')
         row = dataframe[dataframe.Regid == l]
@@ -22,13 +30,21 @@ def bromines_from_smiles(dataframe):
 
         for j, atoms in enumerate(a):
             b = atoms.GetAtomicNum()
+            d = atoms.GetIdx()
             if b == 1:
                 e = atoms.GetNeighbors()
-                for h, k in enumerate(e):
+                for j, k in enumerate(e):
                     if k.GetAtomicNum() == 6:
                         if str(k.GetHybridization()) == 'SP2':
                             C_index = k.GetIdx()
                             C_index_list.append(C_index)
+                            for w in k.GetNeighbors():
+                                if w.GetAtomicNum() != 6:
+                                    for x in w.GetNeighbors():
+                                        if x.GetAtomicNum() != 6:
+                                            if x.GetAtomicNum() != 1:
+                                                    hets = [w.GetIdx(), x.GetIdx(), C_index]
+                                                    Het_index.append(hets)
 
         for x in range(len(C_index_list)):
             C_numbering.append(x + 1)
@@ -52,18 +68,21 @@ def bromines_from_smiles(dataframe):
                                 Br_xcoord = float(split[2])
                                 Br_ycoord = float(split[3])
                                 Br_zcoord = float(split[4])
+
                                 Br_coords = (str(Br_xcoord) + ' ' + str(Br_ycoord) + ' ' + str(Br_zcoord))
 
                         with open(bromine_comfilename, 'w') as q:
                             with open(file) as f:
                                 for comline in f:
-                                    split=comline.split()
 
                                     if comline.startswith('%chk='):
                                         print('%chk=' + bromine_chkfilename, file=q)
 
+                                    elif comline.startswith('# opt'):
+                                        print('# opt=modredundant wb97xd/6-31g(d)\n', file=q)
+
                                     elif comline == '0 1\n':
-                                        print('1 1', file=q)
+                                        print('\n1 1', file=q)
 
                                     elif Br_coords in comline:
                                         comsplit=comline.split()
@@ -71,7 +90,31 @@ def bromines_from_smiles(dataframe):
                                             if Br_ycoord == float(comsplit[2]):
                                                 if Br_zcoord == float(comsplit[3]):
                                                     print(comline.strip('\n'), file=q)
-                                                    print('Br', Br_xcoord, Br_ycoord, (Br_zcoord + 2), file=q)
+                                                    print('Br', Br_xcoord, Br_ycoord, str((1.870000000000000000 + Br_zcoord)), file=q)
+
+
+
+                                    elif comline == '\n':
+                                        pass
 
                                     else:
                                         print(comline.strip('\n'), file=q)
+
+                            print('\nB ' + str(int(float(n+1))) + ' '
+                                          + str(int(float(n+2))), ' F', file=q)
+
+                            if len(Het_index) > 0:
+                                for h, k, v in Het_index:
+                                    if v == n:
+                                        if h > n:
+                                            atom1 = h+2
+                                        else:
+                                            atom1 = h+1
+
+                                        if k > n:
+                                            atom2 = k + 2
+                                        else:
+                                            atom2 = k + 1
+
+                                        print('B ' + str(int(float(atom1))) + ' '
+                                              + str(int(float(atom2))), ' F', file=q)

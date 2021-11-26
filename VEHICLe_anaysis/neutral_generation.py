@@ -4,6 +4,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from datetime import date
 import numpy as np
+from tqdm import tqdm
 
 
 def write_gaussian_command_with_regid(Regid, chkfilename):
@@ -18,21 +19,18 @@ def write_gaussian_command_with_regid(Regid, chkfilename):
         p.write('\n')
         p.write('0 1')
 
-def com_from_xyz_coords(xyz_coord_filename, comfilename):
-    with open('Gaussian_command.txt') as fp:
-        data = fp.read()
+def com_from_xyz_coords(indexfilename, comfilename):
 
-    with open(xyz_coord_filename) as fd:
-        data2 = fd.read()
+    with open(comfilename, 'w') as fn:
+        with open('Gaussian_command.txt') as fp:
+            with open(indexfilename) as fd:
 
-        data += '\n'
-        data += data2
+                for gaussline in fp:
+                    print(gaussline.strip('\n'), file=fn)
 
-    with open(comfilename, 'w') as fp:
-        fp.write(data)
-        fp.write('\n')
-        fp.write('\n')
-        fp.write('\n')
+                for indexline in fd:
+                    print(indexline[0].strip('\n'), indexline[4:].strip('\n').lstrip(), file=fn)
+
 
 def write_indexfile(dataframe):
     smiles = dataframe['Smiles']
@@ -41,63 +39,45 @@ def write_indexfile(dataframe):
         Regid = row.Regid.item()
         indexfilename = 'txt_files/' + str(Regid) + '_indexing.txt'
 
-        x = read_mol_from_smiles(a)
-        y = Chem.AddHs(x)
-        z = y.GetAtoms
+        mol = read_mol_from_smiles(a)
+        molH = Chem.AddHs(mol)
+        AllChem.EmbedMolecule(molH)
+        AllChem.MMFFOptimizeMolecule(molH)
+        conf = molH.GetConformer()
+        coordinates = conf.GetPositions()
+        xyz_list = coordinates.tolist()
 
-        coords_2d = AllChem.Compute2DCoords(y)
-        type_array = np.zeros(y.GetNumAtoms(), dtype=np.int32)
+        coords_2d = AllChem.Compute2DCoords(molH)
+        type_array = np.zeros(molH.GetNumAtoms(), dtype=np.int32)
         index_list = []
 
-        for j, atoms in enumerate(y.GetAtoms()):
+        for j, atoms in enumerate(molH.GetAtoms()):
             type_array[j] = atoms.GetAtomicNum()
             index = atoms.GetIdx()
             index_list.append(index)
 
-        for c in y.GetConformers():
-            xyz = c.GetPositions()
-            xyz_list = xyz.tolist()
-
         match_coords = zip(type_array, index_list, xyz_list)
 
-        with open(indexfilename, 'w') as g:
-            for s,t,i in match_coords:
-                print(s, t, *i, file=g)
+        xyzcoords_from_type_array(indexfilename, match_coords)
+
+def basehet_from_smiles(dataframe):
+
+    print('PLEASE NOTE: If you are using neutral_generation.basehet_from_smiles outside of '
+          'workflow.comfile_generation_workflow you need to append blank lines to all generated comfiles')
+
+    regid = dataframe['Regid']
+    todays_date = date.today()
+    write_indexfile(dataframe)
+
+    for i in tqdm(regid):
+
+        indexfilename = 'txt_files/' + str(i) + '_indexing.txt'
+        comfilename = 'neutral_comfiles/' + str(i) + '_' + str(todays_date) + '_wb97xd_631gd_opt.com'
+        chkfilename = str(i) + '_' + str(todays_date) + '_wb97xd-631gd_opt.chk'
+
+        write_gaussian_command_with_regid(i, chkfilename)
+        com_from_xyz_coords(indexfilename, comfilename)
 
 
-def VEHICLe_string_to_com(dataframe):
-    smiles = dataframe['Smiles']
-    for a in smiles:
-        #print(a)
-        row=dataframe[dataframe.Smiles == a]
-        Regid=row.Regid.item()
-        todays_date=date.today()
-        xyz_coord_filename ='txt_files/' + str(Regid) + '_xyzcoords.txt'
-        comfilename ='neutral_comfiles/' + str(Regid) + '_' + str(todays_date) + '_wb97xd_631gd_opt.com'
-        chkfilename= str(Regid) + '_' + str(todays_date) + '_wb97xd_631gd_opt.chk'
-        #print(comfilename)
-
-        x = read_mol_from_smiles(a)
-        y = Chem.AddHs(x)
-        z = y.GetAtoms
-
-        coords_2d = AllChem.Compute2DCoords(y)
-        type_array = np.zeros(y.GetNumAtoms(), dtype=np.int32)
-        index_list=[]
-
-        for j, atoms in enumerate(y.GetAtoms()):
-            type_array[j] = atoms.GetAtomicNum()
-            index=atoms.GetIdx()
-            index_list.append(index)
 
 
-        for c in y.GetConformers():
-            xyz = c.GetPositions()
-            xyz_list = xyz.tolist()
-
-        match_coords = zip(type_array, index_list, xyz_list)
-
-        xyzcoords_from_type_array(xyz_coord_filename, match_coords)
-        write_gaussian_command_with_regid(Regid, chkfilename)
-        com_from_xyz_coords(xyz_coord_filename, comfilename)
-        write_indexfile(dataframe)
