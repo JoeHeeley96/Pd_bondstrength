@@ -50,19 +50,19 @@ def every2nd_sampling(neutral_logfiles):
 
 def random_sample(sample_pool, length):
     '''
-    :param sample_pool: a list of .log files you want to sample from
+    :param sample_pool: a list of regids you want to sample from
     :param length: how many structures you want to sample
     :return: a list of .log files that have been randomly sampled
     '''
 
     sampled_structures = []
+    pbar = tqdm(total=length)
 
-    for j in range(400):
+    while len(sampled_structures) < length:
         value = randint(0, len(sample_pool))
-
-        if len(sampled_structures) < length:
-            file = sample_pool[value]
-            sampled_structures.append(file) if file not in sampled_structures else sampled_structures
+        select = sample_pool[value]
+        sampled_structures.append(select) if select not in sampled_structures else sampled_structures
+        pbar.update(1)
 
     print('Sampled', len(sampled_structures), 'structures')
 
@@ -112,23 +112,25 @@ def get_fps_ids(tm_df, tm_array, outname, num=100, write=False):
     for molid in selected:
         pbar.update(1)
 
-    while len(selected) < num:
-        selected_ids = [x in selected for x in tm_df.molecule_name.values]
-        big_d = 0.0
-        to_pick = ''
-        tm_array = tm_array
-        for molid in tm_df.molecule_name.unique():
-            if molid in selected:
-                continue
-            id1 = tm_df.loc[(tm_df.molecule_name == molid)].index.values[0]
-            distance = np.sum(tm_array[id1][selected_ids])
-            if distance > big_d:
-                big_d = distance
-                to_pick = molid
-        pbar.update(1)
-        selected.append(to_pick)
+    dist = []
+    molids = []
 
-    print('selected', len(selected), 'structures')
+    selected_ids = [x in selected for x in tm_df.molecule_name.values]
+    tm_array = tm_array
+    for molid in tm_df.molecule_name.unique():
+        if molid in selected:
+            continue
+        id1 = tm_df.loc[(tm_df.molecule_name == molid)].index.values[0]
+        distance = np.sum(tm_array[id1][selected_ids])
+
+        molids.append(molid)
+        dist.append(distance)
+
+        pbar.update(1)
+
+    d = dict(zip(molids, dist))
+    dsort = {k: v for k, v in sorted(d.items(), key=lambda item: item[1])}
+    selected = selected + list(dsort.keys())[:(num-1)]
 
     if write:
         with open(outname + str(num) + '.txt', 'w') as f:

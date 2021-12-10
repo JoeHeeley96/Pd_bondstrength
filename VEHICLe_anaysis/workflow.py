@@ -47,6 +47,14 @@ def logfile_analysis_workflow(filelocations, outname, calc_check=True, calc_data
     return failed_runs, bad_structures
 
 def impression_input_workflow(logfiles, fulldata_df, outname, write=True):
+    '''
+
+    :param logfiles: should be the neutral logfiles for the structures ou want to use
+    :param fulldata_df: the output of calculate_properties or logfile_analysis_workflow
+    :param outname: What you want to name the output atom and pair dataframes
+    :param write: Bool, will write the dataframes to .csv files if True
+    :return: atom_df, pair_df for structures you inputted at the start
+    '''
 
     aemols = logfile_to_aemol(logfiles, write=False)
     imp_input = write_imp_input(aemols=aemols, fulldata_df=fulldata_df, outname=outname, write=write)
