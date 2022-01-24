@@ -42,11 +42,11 @@ def calculate_relative_properties(calculate_properties_dataframe, outname, write
         for j in df.columns:
             if 'anion' in j:
                 acidity = float(df[j].values)
-                rel_props['rel_' + j] = (24.038503/acidity)
+                rel_props['rel_' + j] = (24.044391262487466/acidity)
 
             elif 'bromine' in j:
                 elec_aff = float(df[j].values)
-                rel_props['rel_' + j] = (elec_aff/183.651714)
+                rel_props['rel_' + j] = (elec_aff/183.647244829844)
         rel_props_df = rel_props_df.append(rel_props, ignore_index=True)
 
     fill_nan = rel_props_df.fillna(0)

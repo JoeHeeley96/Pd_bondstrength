@@ -5,7 +5,7 @@ from tqdm import tqdm
 
 def comfile_check(comfiles, sampled_structures):
 
-    print('need to check this against broken files to see if it picks it up')
+    print('NEED TO FIX COMFILE CHECK')
     for i in tqdm(sampled_structures):
         molcom_list = [w for w in comfiles if i + '_' in w]
 
@@ -14,24 +14,15 @@ def comfile_check(comfiles, sampled_structures):
         bromine = [z for z in molcom_list if 'bromine' in z]
 
         with open(neutral[0], 'r') as f:
-            neutralxyz = f.readlines()[6:]
-            for j, k in zip(anion, bromine):
-                with open(j, 'r') as p, open(k, 'r') as q:
-                    alines = p.readlines()[6:]
-                    blines = q.readlines()[6:]
+            nlines = [l for l in (line.strip() for line in f) if l]
+            ncoords = nlines[4:]
 
 
-                anionxyz = set(alines).intersection(neutralxyz)
-                brominexyz = set(blines).intersection(neutralxyz)
+#                    if len(alines) != (len(neutralxyz) - 1):
+#                        print(alines)
 
-                if len(anionxyz) != len(neutralxyz) - 1:
-                    print(i)
-                    print(neutral[0])
-                    print(j)
-
-                    if len(brominexyz) != len(neutralxyz) + 1:
-                        pass
-                        #print('CHECK FILE:', k)
+#                        if len(blines) != (len(neutralxyz) + 1):
+#                            print(blines)
 
 
 def opt_check(file, string_to_search):

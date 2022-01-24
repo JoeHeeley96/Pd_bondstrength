@@ -59,7 +59,7 @@ def random_sample(sample_pool, length):
     pbar = tqdm(total=length)
 
     while len(sampled_structures) < length:
-        value = randint(0, len(sample_pool))
+        value = randint(0, len(sample_pool) - 1)
         select = sample_pool[value]
         sampled_structures.append(select) if select not in sampled_structures else sampled_structures
         pbar.update(1)
@@ -99,6 +99,7 @@ def get_tm_df(training_structures, vehicle_df):
     return tm_df, tm_array
 
 def get_fps_ids(tm_df, tm_array, outname, num=100, write=False):
+    print('CHANGE ME BACK TO GITHUB VERSION')
     '''
     :param tm_df: output [0] from get_tm_df
     :param tm_array: output [1] from get_tm_df
@@ -108,7 +109,7 @@ def get_fps_ids(tm_df, tm_array, outname, num=100, write=False):
                 also writes the list as a .txt file if write=True
     '''
     pbar = tqdm(total=num)
-    selected = list(np.random.choice(tm_df.molecule_name.unique(), 1))
+    selected = ['S124']
     for molid in selected:
         pbar.update(1)
 
@@ -117,7 +118,8 @@ def get_fps_ids(tm_df, tm_array, outname, num=100, write=False):
 
     selected_ids = [x in selected for x in tm_df.molecule_name.values]
     tm_array = tm_array
-    for molid in tm_df.molecule_name.unique():
+    exc_molid = set(list(tm_df.molecule_name.unique())) - set(np.array(['S296', 'S2747', 'S5707', 'S15441', 'S8355', 'S8205', 'S8062', 'S297', 'S7958']))
+    for molid in exc_molid:
         if molid in selected:
             continue
         id1 = tm_df.loc[(tm_df.molecule_name == molid)].index.values[0]
@@ -130,7 +132,7 @@ def get_fps_ids(tm_df, tm_array, outname, num=100, write=False):
 
     d = dict(zip(molids, dist))
     dsort = {k: v for k, v in sorted(d.items(), key=lambda item: item[1])}
-    selected = selected + list(dsort.keys())[:(num-1)]
+    selected = selected + ['S296', 'S2747', 'S5707', 'S15441', 'S8355', 'S8205', 'S8062', 'S297', 'S7958'] + list(dsort.keys())[:(num-10)]
 
     if write:
         with open(outname + str(num) + '.txt', 'w') as f:

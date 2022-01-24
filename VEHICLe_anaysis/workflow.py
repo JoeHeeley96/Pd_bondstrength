@@ -10,6 +10,7 @@ from plots import plot_activation_map
 from impression_input import logfile_to_aemol, write_imp_input
 from sampling import get_tm_df, get_fps_ids
 from calculation_check import comfile_check
+from tqdm import tqdm
 
 def comfile_generation_workflow(dataframe):
     basehet_from_smiles(dataframe)
@@ -24,32 +25,39 @@ def comfile_generation_workflow(dataframe):
             f.close()
     comfile_check(comfiles=comfiles, sampled_structures=regids)
 
-def logfile_analysis_workflow(filelocations, outname, calc_check=True, calc_data=True, plot_map=False, write=True):
+def logfile_analysis_workflow(logfilelocation, xyzfilelocation, outname, calc_check=True, calc_data=True, plot_map=False, write=True):
 
     if calc_check:
         failed_runs = []
-        files = glob.glob(filelocations + '/*')
-        xyzfiles = glob.glob('xyzfiles/*')
-        for i in files:
+        files = glob.glob(logfilelocation + '/*')
+        xyzfiles = glob.glob(xyzfilelocation + '/*')
+        for i in tqdm(files):
             if opt_check(i, 'Error'):
-                print('Failed run: ', i)
                 failed_runs.append(i)
 
         bad_structures = output_structure_check(xyzfiles=xyzfiles, logfiles=files, failed_runs=failed_runs)
+        print('Found', len(failed_runs), 'failed structures:', failed_runs)
+
+        with open(outname + '_failed_structures.txt', 'w') as f:
+            for i in failed_runs:
+                print(i, file=f)
+
+        with open(outname + '_bad_structures.txt', 'w') as p:
+            for j in bad_structures:
+                print(j, file=p)
 
     if calc_data:
-        read_data = energy_readdata(filelocations, outname=(outname + '_rawdata.csv'), write=write)
+        read_data = energy_readdata(logfilelocation, outname=(outname + '_rawdata.csv'), write=write)
         calculate_properties(pd.read_csv(outname + '_rawdata.csv'), outname=(outname + '_fulldata.csv'), write=write)
 
     if plot_map:
         plot_activation_map(pd.read_csv(outname + '_fulldata.csv'), outname + '_activation_map.png')
 
-    return failed_runs, bad_structures
 
 def impression_input_workflow(logfiles, fulldata_df, outname, write=True):
     '''
 
-    :param logfiles: should be the neutral logfiles for the structures ou want to use
+    :param logfiles: should be the neutral logfiles for the structures you want to use
     :param fulldata_df: the output of calculate_properties or logfile_analysis_workflow
     :param outname: What you want to name the output atom and pair dataframes
     :param write: Bool, will write the dataframes to .csv files if True
@@ -93,7 +101,7 @@ def logfile_fingerprint_sampling_workflow(neutral_logfiles, training_structures,
     return fpsample
 
 
-def vehicle_fingerprint_sampling_workflow(vehicle_dataframe, outname, num=100, write=True):
+def vehicle_fingerprint_sampling_workflow(vehicle_dataframe, selectdf, outname, num=100, write=True):
 
     sampled_dataframe = pd.DataFrame([])
     regids = vehicle_dataframe['Regid']

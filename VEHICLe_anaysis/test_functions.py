@@ -26,6 +26,8 @@ from sklearn import metrics
 import sys
 from impression_input import write_imp_input
 import math
+from matplotlib.patches import Rectangle
+import matplotlib.pyplot as plt
 from mol_translator.imp_converter import dataframe_write as dfw
 from tqdm import tqdm
 from impression_input import logfile_to_aemol
@@ -55,51 +57,38 @@ from workflow import vehicle_fingerprint_sampling_workflow
 from calculation_check import comfile_check
 from neutral_generation import basehet_from_smiles
 from sampling import random_sample
+from VEHICLe_read import read_mol_from_smiles
+from plots import plot_binary_activation_map
 
 VEHICLe = pd.read_csv('VEHICLe.csv')
+
 dj1 = pd.read_csv('dj1/dj1.csv')
 dj1_clean = pd.read_csv('dj1/dj1_clean.csv')
-dj2 = pd.read_csv('dj2/dj2.csv')
-dj1_fulldata = pd.read_csv('dj1/data/dj1_clean_fulldata.csv')
-comfiles = glob.glob('neutral_comfiles/*') + glob.glob('anion_comfiles/*') + glob.glob('bromine_comfiles/*')
+dj1_clean_fulldata = pd.read_csv('dj1/data/dj1_clean_fulldata.csv')
 dj1logfiles = glob.glob('dj1/logfiles/*')
-xyzfiles = glob.glob('xyzfiles/*')
 dj1anion_logfiles = glob.glob('dj1/logfiles/*anion*')
 dj1bromine_logfiles = glob.glob('dj1/logfiles/*bromine*')
-aemols = glob.glob('aemols/*')
 dj1neutral_logfiles = list(set(dj1logfiles) - set(dj1anion_logfiles) - set(dj1bromine_logfiles))
-anion_xyzfiles = glob.glob('xyzfiles/*anion*')
-dj1_clean_fulldata = pd.read_csv('dj1/data/dj1_clean_fulldata.csv')
-
 independent_testset = pd.read_csv('imp_inputs/dj1clean_random_testset_for_sampling_atom_df.csv')
-#trainingset_for_sampling = pd.read_csv('dj1_training_for_sampling.csv')
+trainingset_for_sampling = pd.read_csv('dj1/dj1_training_for_sampling.csv')
 
+dj2 = pd.read_csv('dj2/dj2.csv')
+dj2_comfiles = glob.glob('dj2/anion_comfiles/*') + glob.glob('dj2/bromine_comfiles/*') + glob.glob('dj2/neutral_comfiles/*')
 dj2_fpsampled1000 = pd.read_csv('dj2/dj2_fpsampled1000.csv')
 dj2_randsample1000 = pd.read_csv('dj2/dj2_randsample1000.csv')
+dj2_logfiles = glob.glob('dj2/logfiles/*')
 
-dj1_fullatomdf = pd.read_csv('dj1clean_full_atom_df.csv')
-dj1_fullpairdf = pd.read_csv('dj1clean_full_pair_df.csv')
+dj3 = pd.read_csv('dj3/dj3.csv')
+dj3_comfiles = glob.glob('dj3/neutral_comfiles/*') + glob.glob('dj3/anion_comfiles/*') + glob.glob('dj3/bromine_comfiles/*')
+dj3_logfiles = glob.glob('dj3/lofiles/*')
 
-
-#vehicle_fingerprint_sampling_workflow(dj2, 'dj2_fpsampled', num=1000, write=True)
-
-dj1_training = pd.DataFrame()
-
+xyzfiles = glob.glob('xyzfiles/*')
 
 
-#regid = dj2_fpsampled1000['Regid']
-#logfile_analysis_workflow('logfiles', None, calc_check=True, calc_data=False,
-#                          plot_map=False, write=False)
+'''structures= logfile_analysis_workflow('dj2/logfiles', outname=None, calc_check=True, calc_data=False, plot_map=False, write=False)
 
-
-
-#comfile_generation_workflow(dj2_fpsampled1000)
-#comfile_check(comfiles=comfiles, sampled_structures=regid)
-
-'''structures= logfile_analysis_workflow('logfiles', outname=None, calc_check=True, calc_data=False, plot_map=False, write=False)
-
-with open('dj2_checked_files.txt', 'r+') as f:
-    for i in structures[1]:
+with open('dj2_checked_files.txt', 'a+') as f:
+    for i in structures[0] + structures[1]:
         for line in f:
             if line.endswith(i):
                 break
@@ -134,27 +123,7 @@ print(bromine_diff)
 print('average lowest anions:', sum(anion_diff)/len(anion_diff))
 print('average highest bromines:', sum(bromine_diff)/len(bromine_diff))'''
 
+successful_activations = ['S1080', 'S1875', 'S1863', 'S5857', 'S6018', 'S5854', 'S5703', 'S1869']
 
-sample_size = [10, 20, 40, 60, 80, 100, 150, 200]
-
-'''for i in sample_size:
-
-    sampled_atom = pd.DataFrame()
-    sampled_pair = pd.DataFrame()
-
-    fpsamp_fulldata = pd.DataFrame()
-    fpsamp = vehicle_fingerprint_sampling_workflow(vehicle_dataframe=trainingset_for_sampling, outname='dj1_clean_fpsampled',
-                                                   num=i, write=False)
-
-    for j in fpsamp['Regid']:
-        sampled_atom = sampled_atom.append(dj1_fullatomdf[dj1_fullatomdf['molecule_name'] == j])
-        sampled_pair = sampled_pair.append(dj1_fullpairdf[dj1_fullpairdf['molecule_name'] == j])
-
-    with open('dj1clean_fpsamp' + str(i) + '_atom_df.csv', 'w') as f:
-        print(sampled_atom.to_csv(sep=','), file=f)
-
-    with open('dj1clean_fpsamp' + str(i) + '_pair_df.csv', 'w') as f:
-        print(sampled_pair.to_csv(sep=','), file=f)'''
-
-comfile_generation_workflow(dj2_randsample1000)
-
+fulldata_filter(VEHICLe_dataframe=VEHICLe, calculate_properties_dataframe=dj1_clean_fulldata, outname='dj1/images/dj1_FDfilter_ActMap_A0.91-2.5_Ea0.91-1.2_TopRight',
+                a_upper=2.5, a_lower=0.91, ea_upper=1.2, ea_lower=0.91)

@@ -22,3 +22,4 @@ def read_list_of_mol_objects(dataframe):
         list_of_mol_objects.append(mol_object)
 
     return list_of_mol_objects
+

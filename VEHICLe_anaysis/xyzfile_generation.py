@@ -9,7 +9,7 @@ def xyzcoords_from_type_array(filename, zipped_type_array):
                 if i[0] == atomicnum:
                     print(atom, i[1], *i[2], file=f)
 
-def xyz_from_com(comfilename):
+def xyz_from_com(comfilename, save_loc):
     split = comfilename.split('\\')
     name = split[1].split('.')
     atoms=['C', 'H', 'N', 'O', 'S', 'Br']
@@ -29,7 +29,7 @@ def xyz_from_com(comfilename):
                         xyz.append(line.strip('\n'))
         numatoms= len(xyz)
 
-        with open('xyzfiles/' + name[0] + '.xyz', 'w') as g:
+        with open(save_loc + '/' + name[0] + '.xyz', 'w') as g:
             print(numatoms,'\n', 'charge=' + str(charge) + '=', file=g, sep='')
 
             for x in xyz:

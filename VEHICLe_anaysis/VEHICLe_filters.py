@@ -4,6 +4,7 @@ import pandas as pd
 from VEHICLe_read import read_list_of_mol_objects
 from print_file import print_to_csv
 from rdkit.Chem import Draw
+from tqdm import tqdm
 
 def nonetype_filter(dataframe):
     for i in read_list_of_mol_objects(dataframe):
@@ -114,16 +115,40 @@ def NCN_filter(dataframe, export):
     if export == 'yes':
         print_to_csv(filtered_data, 'NCN')
 
-def fulldata_filter(VEHICLe_dataframe, fulldata_dataframe, outname):
-    regid = list(set(fulldata_dataframe.Regid))
+def fulldata_filter(VEHICLe_dataframe, calculate_properties_dataframe, outname,
+                    a_upper=1.5, a_lower=0.5, ea_upper=1.5, ea_lower=0.5, write=True):
+
+    '''
+    This function should return an rdkit image of molecules that have relative properties between the defined criteria
+    :param VEHICLe_dataframe: the VEHICLe dataframe
+    :param calculate_properties_dataframe: The output of the property_calculate.calculate_properties or workflow.logfile_analysis_workflow functions
+    :param outname: What you would like to save the image as (recommended that
+    :param a_upper:the upper bound of acidity range of interest
+    :param a_lower:the lower bound of acidity range of interest
+    :param ea_upper:the upper bound of nucleophilicity range of interest
+    :param ea_lower:the lower bound of nucleophilicity range of interest
+    :param write= Bool, if true writes image as outname.png
+    :return: grid image of molecules
+    '''
+
+    if a_upper and ea_upper == 1.5:
+        if a_lower and ea_lower == 0.5:
+            print('Default criteria used')
+
+    regid = list(set(calculate_properties_dataframe.Regid))
     structures=[]
-    for i in regid:
+    rel_a = []
+    rel_ea = []
+
+    for i in tqdm(regid):
         acidities = {}
         elec_affs = {}
+        A_position = []
+        Ea_position = []
         relative_acidities = []
         relative_electro_affs = []
 
-        df = fulldata_dataframe.loc[fulldata_dataframe['Regid'] == i]
+        df = calculate_properties_dataframe.loc[calculate_properties_dataframe['Regid'] == i]
         for j in df.columns:
             if 'anion' in j:
                 acidities[j] = float(df[j].values)
@@ -133,8 +158,9 @@ def fulldata_filter(VEHICLe_dataframe, fulldata_dataframe, outname):
         for m, c in acidities.items():
             if c == (min(acidities.values())):
                 relative_acidities.append(
-                    24.038503 / c) if 24.038503 / c not in relative_acidities else relative_acidities
+                    24.044391262487466 / c ) if 24.044391262487466 / c  not in relative_acidities else relative_acidities
                 acidic_position = list(m.split('_')[0])
+                A_position.append(acidic_position)
 
                 if len(relative_acidities) == 1:
                     break
@@ -142,26 +168,38 @@ def fulldata_filter(VEHICLe_dataframe, fulldata_dataframe, outname):
         for f, l in elec_affs.items():
             if l == max(elec_affs.values()):
                 relative_electro_affs.append(
-                    l / 183.651714) if l / 183.651714 not in relative_electro_affs else relative_electro_affs
+                    l / 183.64724482984454) if l / 183.64724482984454 not in relative_electro_affs else relative_electro_affs
                 nucleophilic_position = list(f.split('_')[0])
+                Ea_position.append(nucleophilic_position)
 
         if len(relative_acidities) != len(relative_electro_affs):
             print('There is a problem with: ', i, 'please check!')
 
-        #if (relative_acidities[0] < 1.0) and 0.5 <= relative_electro_affs[0] <= 0.7:
-        print(i, 'acidic position is:', acidic_position[0], 'with relative acidity:', relative_acidities,
-                                      'nucleophilic position is:', nucleophilic_position[0],
-                                            'with relative electrophile affinity:', relative_electro_affs)
-        structures.append(i)
+        if (a_lower <= relative_acidities[0] <= a_upper) and (ea_lower <= relative_electro_affs[0] <= ea_upper):
+            print(i, 'acidic position is:', A_position[0][0], 'with relative acidity:', relative_acidities,
+                                          'nucleophilic position is:', Ea_position[0][0],
+                                                'with relative electrophile affinity:', relative_electro_affs)
+            structures.append(i)
+            rel_a.append(relative_acidities[0])
+            rel_ea.append(relative_electro_affs[0])
 
     mol_list = []
-    for i in structures:
-        row = VEHICLe_dataframe[VEHICLe_dataframe['Regid'].str.fullmatch(i)]
+    legend_strings = []
+
+    for h, k, l in zip(structures, rel_a, rel_ea):
+        leg_str = 'Regid: ' + h + '\nRel Acidity: ' + str(round(k, 2)) + '\nRel Elec_Aff: ' + str(round(l, 2))
+        legend_strings.append(leg_str)
+
+        row = VEHICLe_dataframe[VEHICLe_dataframe['Regid'].str.fullmatch(h)]
+
         for j in row.Smiles.values:
             mol = Chem.MolFromSmiles(j)
             mol_list.append(mol)
-        img = Draw.MolsToGridImage(mol_list, molsPerRow=5, legends=[x for x in structures])
-        img.save(outname + '.png')
+
+    if write:
+        img = Draw.MolsToGridImage(mol_list, molsPerRow=12, legends=legend_strings, subImgSize=(200, 200))
+
+        img.save(outname + '.png', pgi=(1200))
 
 
 
