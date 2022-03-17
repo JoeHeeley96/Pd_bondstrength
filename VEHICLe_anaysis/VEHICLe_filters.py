@@ -175,7 +175,7 @@ def fulldata_filter(VEHICLe_dataframe, calculate_properties_dataframe, outname,
         if len(relative_acidities) != len(relative_electro_affs):
             print('There is a problem with: ', i, 'please check!')
 
-        if (a_lower <= relative_acidities[0] <= a_upper) and (ea_lower <= relative_electro_affs[0] <= ea_upper):
+        if (a_lower <= relative_acidities[0] < a_upper) and (ea_lower <= relative_electro_affs[0] < ea_upper):
             print(i, 'acidic position is:', A_position[0][0], 'with relative acidity:', relative_acidities,
                                           'nucleophilic position is:', Ea_position[0][0],
                                                 'with relative electrophile affinity:', relative_electro_affs)
@@ -201,5 +201,113 @@ def fulldata_filter(VEHICLe_dataframe, calculate_properties_dataframe, outname,
 
         img.save(outname + '.png', pgi=(1200))
 
+def selectivity_filter(VEHICLe_dataframe, calculate_properties_dataframe, outname,
+                    s_upper=1.2, s_lower=0.5, write=True):
+
+    if s_upper == 1.2:
+        if s_lower == 0.5:
+            print('-----Default criteria used------')
+
+    regid = list(set(calculate_properties_dataframe.Regid))
+    structures = []
+    positions = []
+    highlight = []
+    colors = {}
+    selectivities = []
+    rel_props = []
+
+    for i in tqdm(regid):
+        acidities = {}
+        elec_affs = {}
+        A_position = []
+        Ea_position = []
+        relative_acidities = []
+        relative_electro_affs = []
+
+        df = calculate_properties_dataframe.loc[calculate_properties_dataframe['Regid'] == i]
+        for j in df.columns:
+            if 'anion' in j:
+                acidities[j] = float(df[j].values)
+            elif 'bromine' in j:
+                elec_affs[j] = float(df[j].values)
+
+        for m, c in acidities.items():
+            if c == (min(acidities.values())):
+                relative_acidities.append(
+                    24.044391262487466 / c) if 24.044391262487466 / c not in relative_acidities else relative_acidities
+                acidic_position = list(m.split('_')[0])
+                A_position.append(int(acidic_position[0]))
+
+                if len(relative_acidities) == 1:
+                    break
+
+        for f, l in elec_affs.items():
+            if l == max(elec_affs.values()):
+                relative_electro_affs.append(
+                    l / 183.64724482984454) if l / 183.64724482984454 not in relative_electro_affs else relative_electro_affs
+                nucleophilic_position = list(f.split('_')[0])
+                Ea_position.append(int(nucleophilic_position[0]))
+
+        if len(relative_acidities) != len(relative_electro_affs):
+            print('There is a problem with: ', i, 'please check!')
+
+        selectivity_metric = relative_acidities[0]/relative_electro_affs[0]
+
+        if s_lower < selectivity_metric <= s_upper:
+            structures.append(i)
+            selectivities.append(selectivity_metric)
+            rel_props.append([relative_acidities[0], relative_electro_affs[0]])
+            positions.append(A_position + Ea_position)
+
+    mol_list = []
+    legend_strings = []
+
+    for h, k, l, m in zip(structures, selectivities, positions, rel_props):
+
+        leg_str = 'Regid: ' + h + ' Selectivity: ' + str(round(k, 2)) + '\nRel Acidity ' + str(round(m[0], 2)) + ' Rel Ea: ' + str(round(m[1], 2))
+
+        legend_strings.append(leg_str)
+        row = VEHICLe_dataframe[VEHICLe_dataframe['Regid'].str.fullmatch(h)]
+
+        for j in row.Smiles.values:
+            C_index_list = []
+            mol = Chem.MolFromSmiles(j)
+            molH = Chem.AddHs(mol)
+            a = molH.GetAtoms()
+            mol_list.append(mol)
+
+            for j, atoms in enumerate(a):
+                b = atoms.GetAtomicNum()
+                if b == 1:
+                    e = atoms.GetNeighbors()
+                    for j, k in enumerate(e):
+                        if k.GetAtomicNum() == 6:
+                            if str(k.GetHybridization()) == 'SP2':
+                                C_index = k.GetIdx()
+                                C_index_list.append(C_index)
+
+            if l[0] != l[1]:
+                a_listindex = l[0] - 1
+                ea_listindex = l[1] - 1
+                mol_c_list = [C_index_list[a_listindex]] + [C_index_list[ea_listindex]]
+                highlight.append(mol_c_list)
+
+            else:
+                a_listindex = l[0] - 1
+                mol_c_list = C_index_list[a_listindex]
+                highlight.append([mol_c_list])
+
+    for p, j in enumerate(highlight):
+        if len(j) > 1:
+            colors[p] = {j[0]:(1,0,0), j[1]:(0,0,1)}
+
+        else:
+            colors[p] = {j[0]: (128, 0, 128)}
+
+    if write:
+        img = Draw.MolsToGridImage(mol_list, molsPerRow=6, highlightAtomLists=highlight, highlightAtomColors=colors,
+        legends=legend_strings, subImgSize=(200, 200))
+
+        img.save(outname + '.png', pgi=(1200))
 
 

@@ -12,11 +12,11 @@ def logfile_to_aemol(logfiles, write=False, ftype='log'):
 
     for file in tqdm(list(array)):
         x = file.split('\\')
-        p = x[1].split('_')[0]
+        p = x[2].split('_')[0]
 
         outfile = 'aemols/' + str(p) + '_AEMOL.sdf'
 
-        amol = aemol(p)
+        amol = aemol(p, filepath=file)
         amol.from_file(file, ftype=ftype)
         amol.prop_fromfile(file, 'g16', 'scf')
 
@@ -78,7 +78,7 @@ def write_imp_input(aemols, fulldata_df, outname, write=True):
         hydrogens = []
 
         for ind in catom_index.values:
-            c_conn=mol_df.iloc[ind].conn
+            c_conn = mol_df.iloc[ind].conn
             for i in hatom_index.values:
                 c = str(c_conn).split(' ')
                 if '1' in c[i]:

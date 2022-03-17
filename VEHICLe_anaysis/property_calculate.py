@@ -56,3 +56,39 @@ def calculate_relative_properties(calculate_properties_dataframe, outname, write
             print(fill_nan.to_csv(sep=','), file=f)
 
     return fill_nan
+
+
+def find_average_diff(calculate_properties_dataframe):
+    regids = calculate_properties_dataframe['Regid']
+    diff_acidity = []
+    diff_elec = []
+
+    for i in regids:
+        acidity = []
+        elec_aff = []
+        props = calculate_properties_dataframe[calculate_properties_dataframe['Regid'] == i]
+        prop_nan = props.fillna(0)
+
+        anions = [j for j in prop_nan.columns if 'anion' in j]
+        bromines = [k for k in prop_nan.columns if 'bromine' in k]
+
+        for l in anions:
+            acidity = acidity + prop_nan[l].values.tolist()
+
+        for m in bromines:
+            elec_aff = elec_aff + prop_nan[m].values.tolist()
+
+        a_max = max(acidity)
+        a2_max = max([x for x in acidity if x != a_max])
+
+        b_max = max(elec_aff)
+        b2_max = max([y for y in elec_aff if y != b_max])
+
+        if a2_max != 0:
+            diff_acidity.append(a_max - a2_max)
+
+        if b2_max != 0:
+            diff_elec.append(b_max - b2_max)
+
+    print('Average delta acidity: ', sum(diff_acidity) / len(diff_acidity))
+    print('Average delta Electrophile Affinity: ', sum(diff_elec) / len(diff_elec))

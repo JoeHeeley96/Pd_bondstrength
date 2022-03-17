@@ -11,7 +11,7 @@ def xyzcoords_from_type_array(filename, zipped_type_array):
 
 def xyz_from_com(comfilename, save_loc):
     split = comfilename.split('\\')
-    name = split[1].split('.')
+    name = split[-1].split('.')
     atoms=['C', 'H', 'N', 'O', 'S', 'Br']
     with open(comfilename) as p:
         xyz=[]
@@ -28,12 +28,13 @@ def xyz_from_com(comfilename, save_loc):
                     if i in line:
                         xyz.append(line.strip('\n'))
         numatoms= len(xyz)
+        xyzfilename = save_loc + '/' + name[0] + '.xyz'
 
-        with open(save_loc + '/' + name[0] + '.xyz', 'w') as g:
+        with open(xyzfilename, 'w') as g:
             print(numatoms,'\n', 'charge=' + str(charge) + '=', file=g, sep='')
 
             for x in xyz:
                 line=str(x)
                 print(line.strip('\n'), file=g)
-
+    return xyzfilename
 

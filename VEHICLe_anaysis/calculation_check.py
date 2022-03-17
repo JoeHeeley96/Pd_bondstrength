@@ -42,7 +42,7 @@ def get_dist_array(aemol):
 
     return dist_array
 
-def output_structure_check(xyzfiles, logfiles, failed_runs=[]):
+def output_structure_check(xyzfiles, logfiles):
     '''
     This function checks the MAE between bond angles
     for the input and output structures.
@@ -58,28 +58,29 @@ def output_structure_check(xyzfiles, logfiles, failed_runs=[]):
     '''
 
     badfiles = []
-    for i in tqdm(xyzfiles):
-        in_file = i.split('\\')
-        in_split = in_file[1].split('-')
+    for i in tqdm(logfiles):
+        out_file = i.split('\\')
+        out_split = out_file[1].split('-')
 
-        for j in logfiles:
+        for j in xyzfiles:
 
-            out_file = j.split('\\')
-            out_split = out_file[1].split('-')
+            in_file = j.split('\\')
+            in_split = in_file[1].split('-')
 
             if in_split[0] == out_split[0]:
+
                 input_aemol = aemol(in_file[1].split('_')[0])
-                input_aemol.from_file(i, ftype = 'xyz')
+                input_aemol.from_file(j, ftype='xyz')
 
                 output_aemol = aemol(in_file[1].split('_')[0])
-                output_aemol.from_file(j, ftype='log')
+                output_aemol.from_file(i, ftype='log')
 
                 input_structure = get_bond_angles(input_aemol)
                 output_structure = get_bond_angles(output_aemol)
 
                 err = []
                 for x,y in zip(input_structure, output_structure):
-                    for m, c in zip(x,y):
+                    for m, c in zip(x, y):
                         mnan = np.asarray([0 if x != x else x for x in m])
                         cnan = np.asarray([0 if x != x else x for x in c])
 
@@ -94,4 +95,5 @@ def output_structure_check(xyzfiles, logfiles, failed_runs=[]):
                     badfiles.append(j)
 
     print('Large variances detected in ', len(badfiles), ' output structures:', badfiles)
+
     return badfiles

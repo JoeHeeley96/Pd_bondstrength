@@ -6,6 +6,7 @@ from bromine_generation import bromines_from_smiles
 from logfile_read import energy_readdata
 from calculation_check import opt_check, output_structure_check
 from property_calculate import calculate_properties
+from property_calculate import calculate_relative_properties
 from plots import plot_activation_map
 from impression_input import logfile_to_aemol, write_imp_input
 from sampling import get_tm_df, get_fps_ids
@@ -25,7 +26,8 @@ def comfile_generation_workflow(dataframe):
             f.close()
     comfile_check(comfiles=comfiles, sampled_structures=regids)
 
-def logfile_analysis_workflow(logfilelocation, xyzfilelocation, outname, calc_check=True, calc_data=True, plot_map=False, write=True):
+def logfile_analysis_workflow(logfilelocation, xyzfilelocation, outname, calc_check=True, calc_data=True, calc_rel_data=True,
+                              plot_map=False, write=True):
 
     if calc_check:
         failed_runs = []
@@ -35,7 +37,7 @@ def logfile_analysis_workflow(logfilelocation, xyzfilelocation, outname, calc_ch
             if opt_check(i, 'Error'):
                 failed_runs.append(i)
 
-        bad_structures = output_structure_check(xyzfiles=xyzfiles, logfiles=files, failed_runs=failed_runs)
+        bad_structures = output_structure_check(xyzfiles=xyzfiles, logfiles=files)
         print('Found', len(failed_runs), 'failed structures:', failed_runs)
 
         with open(outname + '_failed_structures.txt', 'w') as f:
@@ -49,6 +51,11 @@ def logfile_analysis_workflow(logfilelocation, xyzfilelocation, outname, calc_ch
     if calc_data:
         read_data = energy_readdata(logfilelocation, outname=(outname + '_rawdata.csv'), write=write)
         calculate_properties(pd.read_csv(outname + '_rawdata.csv'), outname=(outname + '_fulldata.csv'), write=write)
+
+        if calc_rel_data:
+            calculate_properties_df = pd.read_csv(outname + '_fulldata.csv')
+            calculate_relative_properties(calculate_properties_dataframe=calculate_properties_df,
+                                          outname= outname + '_fulldata_relative.csv', write=True)
 
     if plot_map:
         plot_activation_map(pd.read_csv(outname + '_fulldata.csv'), outname + '_activation_map.png')

@@ -40,7 +40,7 @@ def plot_animation_3D(xdata, ydata, zdata, regids, outname):
 
     ani = animation.FuncAnimation(fig, animate, init_func=init, frames=90, interval=50, blit=True)
     fn = outname
-    ani.save(fn + '.gif', writer='pillow', fps=1000 / 50)
+    ani.save(fn + '.gif', writer='pillow', fps=100)
 
 
 def plot_activation_map(calculate_properties_dataframe, outname):
@@ -71,9 +71,6 @@ def plot_activation_map(calculate_properties_dataframe, outname):
             if c == (min(acidities.values())):
                 relative_acidities.append(24.044391262487466/c) if 24.044391262487466/c not in relative_acidities else relative_acidities
                 position=list(m.split('_')[0])
-                #for a,b in elec_affs.items():
-                 #   if position[0] in a:
-                  #      relative_electro_affs.append(b/183.651714) if b/183.651714 not in relative_electro_affs else relative_electro_affs
 
                 if len(relative_acidities) == 1:
                     break
@@ -82,28 +79,22 @@ def plot_activation_map(calculate_properties_dataframe, outname):
             if l == max(elec_affs.values()):
                 relative_electro_affs.append(l/183.647244829844) if l/183.647244829844 not in relative_electro_affs else relative_electro_affs
                 position = list(f.split('_')[0])
-                #if len(relative_electro_affs) == 2:
-                 #   for w, e in acidities.items():
-                  #      if position[0] in w:
-                   #         relative_acidities.append(e / 24.038503) if e/24.038503 not in relative_acidities else relative_acidities
 
 
         if len(relative_acidities) != len(relative_electro_affs):
             print('There is a problem with: ', i, 'please check!')
-        if relative_acidities[0] >=1:
-            if relative_electro_affs[0] >=1:
-                print(i)
 
         plot=ax1.scatter(relative_electro_affs, relative_acidities, label=i, marker='x', zorder=2)
+
     plt.xlabel('Relative Electrophile Affinity')
     plt.ylabel('Relative Acidity')
     plt.title('Heterocycle properties relative to Pyrazolo[1,5-a]pyrimidine')
-    plt.gca().add_patch(Rectangle((0, 1), 2, 4, color='salmon'))
-    plt.gca().add_patch(Rectangle((1, 0), 1, 5, color='lightblue'))
-    plt.gca().add_patch(Rectangle((1, 1), 1, 4, color='mediumpurple'))
-    ax1.legend(bbox_to_anchor=(1.05,1,2,1))
-    plt.xlim(0.6, 1.25)
-    plt.ylim(0, 2.6)
+    #plt.gca().add_patch(Rectangle((0, 1), 2, 4, color='salmon'))
+    #plt.gca().add_patch(Rectangle((1, 0), 1, 5, color='lightblue'))
+    #plt.gca().add_patch(Rectangle((1, 1), 1, 4, color='mediumpurple'))
+    #ax1.legend(bbox_to_anchor=(1.05,1,2,1))
+    plt.xlim(0.35, 1.4)
+    plt.ylim(0.09, 10.0)
 
     plt.savefig(outname, dpi=(600))
 
@@ -229,8 +220,8 @@ def plot_moving_3D_plots(calculate_properties_dataframe, outname):
 
     plot_animation_3D(xdata,ydata,zdata,regids, outname)
 
-def plot_binary_activation_map(calculate_properties_dataframe, successful_activations, outname,
-                               limit=1.2, write=True):
+def plot_binary_activation_map(calculate_properties_dataframe, successful_activations, selectivity_targets,
+                               exploration_targets, outname, limit=1.2, write=True):
     '''
     This function plots the same activation map as in the plots.plot_activation_map function, but also draw the boundary
     between acidic and nucleophilic actiations depending on the value of limit (this should be determined experimentally)
@@ -238,6 +229,8 @@ def plot_binary_activation_map(calculate_properties_dataframe, successful_activa
     :param calculate_properties_dataframe: Output of the property_calculate.calculate_properties function or
                                         workflow.logfile_analysis_workflow function. Labelled as "outname"_fulldata.csv
     :param successful_activations: A list of Regids that have been tested in the lab and agree with predictions
+    :param selectivity_targets: A list of Regids that have been chosen to investigate the selectivity metric
+    :param exploration_targets: A list of Regids that have been chosen to fill out unexplored areas of the map
     :param outname: the name the graph will be saved under.
     :param limit: Where the boundary should be between acidic and nucleophilic activation.
     :param write: Bool, saves graph as outname.png if True.
@@ -277,25 +270,40 @@ def plot_binary_activation_map(calculate_properties_dataframe, successful_activa
             if i == j:
                 ax1.scatter(relative_electro_affs, relative_acidities,
                             edgecolors='green', facecolors='none', zorder=3, s=140)
-                if i =='S1875':
-                    print(relative_acidities[0]/relative_electro_affs[0])
+
             else:
 
                 if relative_acidities[0] and relative_electro_affs[0] == 1:
                     ax1.scatter(relative_electro_affs[0], relative_acidities[0],
                                 marker='x', color='green', zorder=3)
 
-                elif relative_acidities[0]/relative_electro_affs[0] <= limit:
-                    ax1.scatter(relative_electro_affs, relative_acidities,
-                                marker='x', color='blue', zorder=2)
+        if len(relative_acidities) == 0:
+            print('no ch bond', i)
 
-                elif relative_acidities[0]/relative_electro_affs[0] > limit:
-                    ax1.scatter(relative_electro_affs, relative_acidities,
-                                marker='x', color='red', zorder=2)
+        elif relative_acidities[0]/relative_electro_affs[0] <= limit:
+            ax1.scatter(relative_electro_affs, relative_acidities,
+                        marker='x', color='blue', zorder=2)
+
+        elif relative_acidities[0]/relative_electro_affs[0] > limit:
+            ax1.scatter(relative_electro_affs, relative_acidities,
+                        marker='x', color='red', zorder=2)
+
+        for k in selectivity_targets:
+            if i == k:
+                ax1.scatter(relative_electro_affs, relative_acidities,
+                            edgecolors='orange', facecolors='none', zorder=4, s=5)
+
+        for l in exploration_targets:
+            if i == l:
+                ax1.scatter(relative_electro_affs, relative_acidities,
+                            edgecolors='white', facecolors='none', zorder=4, s=5)
 
 
     x = np.linspace(0, 100.0, 500)
     y = limit*x
+
+    boundary_leg = mlines.Line2D([], [], color='black', linestyle='--',
+                          label='Boundary')
 
     Ea_cross = mlines.Line2D([], [], color='blue', marker='x', linestyle='None', markersize=7,
                           label='Predicted Electrophilic Activation')
@@ -309,16 +317,22 @@ def plot_binary_activation_map(calculate_properties_dataframe, successful_activa
     G_ring = mlines.Line2D([], [], markeredgecolor='green', markerfacecolor='None', marker='o', linestyle='None',
                            markersize=7, label='Experimentally Observed')
 
+    O_ring = mlines.Line2D([], [], markeredgecolor='orange', markerfacecolor='None', marker='o', linestyle='None',
+                           markersize=4, label='Selectivity Test')
+
+    P_ring = mlines.Line2D([], [], markeredgecolor='white', markerfacecolor='None', marker='o', linestyle='None',
+                           markersize=4, label='Exploration Targets')
+
     plt.plot(x, y, label='Boundary', color='black', linestyle='--', zorder=3)
 
     plt.xlabel('Relative Electrophile Affinity')
     plt.ylabel('Relative Acidity')
-    plt.title('DJ1 Binary Activation "Heat" Map')
+    plt.title('DJ2 Binary Activation "Heat" Map')
     plt.gca().add_patch(Polygon([[0.1, (0.1*limit)], [3.0, (3.0*limit)], [0.9, 11]], facecolor='salmon',edgecolor='salmon', zorder=1, closed=True))
     plt.gca().add_patch(Polygon([[0.1, (0.1*limit)], [3.0, (3.0*limit)], [0.9, -11]], color='lightblue', zorder=1))
-    plt.xlim(0.6, 1.25)
-    plt.ylim(0, 2.6)
-    plt.legend(handles=[Ea_cross, A_cross, G_cross, G_ring], prop={'size': 7.8}, bbox_to_anchor=(0.997, 0.997), loc=1, borderaxespad=0)
+    plt.xlim(0.35, 1.4)
+    plt.ylim(0.09, 10.0)
+    plt.legend(handles=[Ea_cross, A_cross, G_cross, G_ring, O_ring, P_ring], prop={'size': 7.8}, bbox_to_anchor=(0.997, 0.997), loc=1, borderaxespad=0)
 
     if write:
         plt.savefig(outname, dpi=(600))

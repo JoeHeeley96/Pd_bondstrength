@@ -6,7 +6,7 @@ from tqdm import tqdm
 import glob
 
 
-def bromines_from_smiles(dataframe, het_conn=False):
+def bromines_from_smiles(dataframe):
 
     print('PLEASE NOTE: If you are using bromine_generation.bromines_from_smiles outside of '
           'workflow.comfile_generation_workflow you need to append blank lines to all generated comfiles')
@@ -14,11 +14,10 @@ def bromines_from_smiles(dataframe, het_conn=False):
     regid = dataframe['Regid']
 
     for l in tqdm(regid):
-        het_conn = False
         C_index_list = []
         C_numbering = []
         Het_index = []
-        comfiles = glob.glob('neutral_comfiles/' + str(l) + '_*')
+        comfiles = glob.glob('comfiles/' + str(l) + '_*')
         index_file = glob.glob('txt_files/' + str(l) + '_indexing.txt')
         row = dataframe[dataframe.Regid == l]
         smiles = row.Smiles.item()
@@ -61,7 +60,7 @@ def bromines_from_smiles(dataframe, het_conn=False):
                         for line in p:
                             comindex = line[2] + line[3]
                             if float(n) == float(comindex):
-                                bromine_comfilename = 'bromine_comfiles/' + name[0] + '_' + str(o) + 'bromine_' + todays_date + '_' + name[2] + '-' + name[3] + '_opt.com'
+                                bromine_comfilename = 'comfiles/' + name[0] + '_' + str(o) + 'bromine_' + todays_date + '_' + name[2] + '-' + name[3] + '_opt.com'
                                 bromine_chkfilename = name[0] + '_' + str(o) + 'bromine_' + todays_date + '_' + name[
                                     2] + '-' + name[3] + '_opt.chk'
                                 split = line.split(' ')

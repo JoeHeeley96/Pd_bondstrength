@@ -7,11 +7,25 @@ import numpy as np
 from tqdm import tqdm
 
 
-def write_gaussian_command_with_regid(Regid, chkfilename):
+def type_dict(warning=True):
+
+    if warning:
+        print('Type Dict includes: H, C, N, O, S ONLY')
+
+    type_dict = {1 : 'H', 6: 'C', 7: 'N', 8: 'O', 16: 'S'}
+
+    return type_dict
+
+def write_gaussian_command_with_regid(Regid, chkfilename, modredundant=False):
     with open('Gaussian_command.txt', 'w') as p:
         p.write('%chk=' + chkfilename)
         p.write('\n')
-        p.write('# opt wb97xd/6-31g(d)')
+
+        if modredundant:
+            p.write('# opt=modredundant wb97xd/6-31g(d)')
+        else:
+            p.write('# opt wb97xd/6-31g(d)')
+
         p.write('\n')
         p.write('\n')
         p.write(Regid)
@@ -72,7 +86,7 @@ def basehet_from_smiles(dataframe):
     for i in tqdm(regid):
 
         indexfilename = 'txt_files/' + str(i) + '_indexing.txt'
-        comfilename = 'neutral_comfiles/' + str(i) + '_' + str(todays_date) + '_wb97xd_631gd_opt.com'
+        comfilename = 'comfiles/' + str(i) + '_' + str(todays_date) + '_wb97xd_631gd_opt.com'
         chkfilename = str(i) + '_' + str(todays_date) + '_wb97xd-631gd_opt.chk'
 
         write_gaussian_command_with_regid(i, chkfilename)

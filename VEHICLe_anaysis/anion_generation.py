@@ -14,7 +14,7 @@ def anions_from_smiles(dataframe):
     regid = dataframe['Regid']
 
     for l in tqdm(regid):
-        comfiles = glob.glob('neutral_comfiles/' + str(l) + '_*')
+        comfiles = glob.glob('comfiles/' + str(l) + '_*')
         index_file = glob.glob('txt_files/' + str(l) + '_indexing.txt')
         H_index_list = []
         C_index_list = []
@@ -64,7 +64,7 @@ def anions_from_smiles(dataframe):
                             comindex = line[2] + line[3]
                             if float(n[0]) == float(comindex):
                                 xyz = line[4:]
-                                anion_comfilename = 'anion_comfiles/' + name[0] + '_' + str(
+                                anion_comfilename = 'comfiles/' + name[0] + '_' + str(
                                     n[1]) + 'anion_' + todays_date + '_' + \
                                                     name[2] + '-' + name[3] + '_opt.com'
 
@@ -97,4 +97,3 @@ def anions_from_smiles(dataframe):
                                         for h, k, v in Het_index:
                                             if v == n[0]:
                                                 print('B', (h + 1), (k + 1), 'F', file=q)
-
