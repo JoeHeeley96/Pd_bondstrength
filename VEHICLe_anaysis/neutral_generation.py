@@ -6,16 +6,6 @@ from datetime import date
 import numpy as np
 from tqdm import tqdm
 
-
-def type_dict(warning=True):
-
-    if warning:
-        print('Type Dict includes: H, C, N, O, S ONLY')
-
-    type_dict = {1 : 'H', 6: 'C', 7: 'N', 8: 'O', 16: 'S'}
-
-    return type_dict
-
 def write_gaussian_command_with_regid(Regid, chkfilename, modredundant=False):
     with open('Gaussian_command.txt', 'w') as p:
         p.write('%chk=' + chkfilename)
@@ -74,10 +64,11 @@ def write_indexfile(dataframe):
 
         xyzcoords_from_type_array(indexfilename, match_coords)
 
-def basehet_from_smiles(dataframe):
+def basehet_from_smiles(dataframe, workflow=False):
 
-    print('PLEASE NOTE: If you are using neutral_generation.basehet_from_smiles outside of '
-          'workflow.comfile_generation_workflow you need to append blank lines to all generated comfiles')
+    if not workflow:
+        print('PLEASE NOTE: If you are using neutral_generation.basehet_from_smiles outside of '
+              'workflow.comfile_generation_workflow you need to append blank lines to all generated comfiles')
 
     regid = dataframe['Regid']
     todays_date = date.today()

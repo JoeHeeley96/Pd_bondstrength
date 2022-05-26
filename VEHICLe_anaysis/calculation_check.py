@@ -9,9 +9,9 @@ def comfile_check(comfiles, sampled_structures):
     for i in tqdm(sampled_structures):
         molcom_list = [w for w in comfiles if i + '_' in w]
 
-        neutral = [y for y in molcom_list if 'neutral' in y]
         anion = [x for x in molcom_list if 'anion' in x]
         bromine = [z for z in molcom_list if 'bromine' in z]
+        neutral = [y for y in bromine if 'anion' not in y]
 
         with open(neutral[0], 'r') as f:
             nlines = [l for l in (line.strip() for line in f) if l]
@@ -60,15 +60,13 @@ def output_structure_check(xyzfiles, logfiles):
     badfiles = []
     for i in tqdm(logfiles):
         out_file = i.split('\\')
-        out_split = out_file[1].split('-')
+        out_split = out_file[1].split('.')
 
         for j in xyzfiles:
-
             in_file = j.split('\\')
-            in_split = in_file[1].split('-')
+            in_split = in_file[1].split('.')
 
             if in_split[0] == out_split[0]:
-
                 input_aemol = aemol(in_file[1].split('_')[0])
                 input_aemol.from_file(j, ftype='xyz')
 
@@ -79,16 +77,16 @@ def output_structure_check(xyzfiles, logfiles):
                 output_structure = get_bond_angles(output_aemol)
 
                 err = []
-                for x,y in zip(input_structure, output_structure):
+                for x, y in zip(input_structure, output_structure):
                     for m, c in zip(x, y):
                         mnan = np.asarray([0 if x != x else x for x in m])
                         cnan = np.asarray([0 if x != x else x for x in c])
 
                         if 'anion' in i:
-                            if np.mean(np.absolute(mnan-cnan)) > 12.0:
+                            if np.mean(np.absolute(mnan-cnan)) > 22.0:
                                 err.append(np.mean(np.absolute(mnan-cnan)))
                         elif 'bromine' in i:
-                            if np.mean(np.absolute(mnan-cnan)) > 22.0:
+                            if np.mean(np.absolute(mnan-cnan)) > 32.0:
                                 err.append(np.mean(np.absolute(mnan-cnan)))
 
                 if len(err) > 0:

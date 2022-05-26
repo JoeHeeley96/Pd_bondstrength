@@ -3,80 +3,45 @@ import glob
 from datetime import date
 from bromine_generation import bromines_from_smiles
 from xyzfile_generation import xyz_from_com
-from rdkit.Chem import Draw
-from rdkit import Chem
-from rdkit.Chem import rdchem
-from rdkit.Chem import rdmolfiles
+from VEHICLe_filters import djr_filter
+from VEHICLe_filters import atom_filter
 from anion_generation import anions_from_smiles
-from rdkit.Chem import AllChem
-from VEHICLe_filters import NCN_filter
 from plots import plot_activation_map
 import numpy as np
+from VEHICLe_filters import synthesis_filter
 from rdkit.Chem.FragmentMatcher import FragmentMatcher
-from rdkit.Chem import rdRGroupDecomposition
-from print_file import print_smiles_to_gridimage
 from plots import plot_3Dactivation_map
 from plots import plot_activation_map
-from VEHICLe_filters import fulldata_filter
-import glob
-import copy
-import os
-import re
 from sklearn import metrics
-import sys
 from impression_input import write_imp_input
-import math
-from matplotlib.patches import Rectangle
-import matplotlib.pyplot as plt
-from mol_translator.imp_converter import dataframe_write as dfw
 from tqdm import tqdm
-from impression_input import logfile_to_aemol
+import rdkit
+from impression_input import exclude_structures
+from impression_input import file_to_aemol
 from impression_input import xyzfile_to_aemol
-from mol_translator.properties.structure.bond_angle import get_bond_angles
-from mol_translator.properties.structure.dihedral_angle import get_dihedral_angle
 from workflow import logfile_analysis_workflow
-import pickle
-from property_calculate import calculate_properties
 from mol_translator.aemol import aemol
-import pybel as pyb
-from logfile_read import energy_readdata
-from mol_translator import aemol
-from mol_translator.structure.rdkit_converter import aemol_to_rdmol
-import sklearn
-from property_calculate import calculate_relative_properties
 from workflow import impression_input_workflow
-from VEHICLe_filters import dj2_filter
 from sampling import get_tm_df
 from sampling import every2nd_sampling
-from calculation_check import output_structure_check
-from calculation_check import opt_check
-from random import randint
-from rdkit import DataStructs
-from sampling import get_fps_ids
 from workflow import comfile_generation_workflow
 from workflow import logfile_fingerprint_sampling_workflow
 from workflow import vehicle_fingerprint_sampling_workflow
-from calculation_check import comfile_check
-from neutral_generation import basehet_from_smiles
-from sampling import random_sample
-from VEHICLe_read import read_mol_from_smiles
-from plots import plot_binary_activation_map
-from VEHICLe_filters import selectivity_filter
-from property_calculate import find_average_diff
-from add_substituent import add_methyls
+from VEHICLe_filters import atom_filter
 
 VEHICLe = pd.read_csv('VEHICLe.csv')
 
 dj1 = pd.read_csv('dj1/dj1.csv')
-dj1_fulldata = pd.read_csv('dj1/dj1_clean_fulldata.csv')
+dj1_fulldata = pd.read_csv('dj1/data/dj1_clean_fulldata.csv')
 dj1_clean = pd.read_csv('dj1/dj1_clean.csv')
 dj1_clean_fulldata = pd.read_csv('dj1/data/dj1_clean_fulldata.csv', index_col=0)
+dj1_clean_fulldata_relative = pd.read_csv('dj1/data/dj1_fulldata_relative.csv')
 dj1_logfiles = glob.glob('dj1/logfiles/*')
 dj1anion_logfiles = glob.glob('dj1/logfiles/*anion*')
 dj1bromine_logfiles = glob.glob('dj1/logfiles/*bromine*')
 dj1neutral_logfiles = list(set(dj1_logfiles) - set(dj1anion_logfiles) - set(dj1bromine_logfiles))
+dj1_sub_fulldata = pd.read_csv('dj1/dj1.1/DJ1.1_FINAL_fulldata.csv')
 independent_testset = pd.read_csv('dj1/imp_inputs/dj1clean_random_testset_for_sampling_atom_df.csv')
-trainingset_for_sampling = pd.read_csv('dj1/dj1_training_for_sampling.csv')
 
 dj2 = pd.read_csv('dj2/dj2.csv')
 dj2_comfiles = glob.glob('dj2/comfiles/*')
@@ -86,7 +51,11 @@ dj2_logfiles = glob.glob('dj2/logfiles/*')
 dj2anion_logfiles = glob.glob('dj2/logfiles/*anion*')
 dj2bromine_logfiles = glob.glob('dj2/logfiles/*bromine*')
 dj2neutral_logfiles = list(set(dj2_logfiles) - set(dj2anion_logfiles) - set(dj2bromine_logfiles))
-dj2_fulldata = pd.read_csv('dj2/dj2_fulldata.csv', index_col=0)
+dj2methyl_logfiles = glob.glob('dj2/logfiles/*Methylated*')
+dj2fluorine_logfiles = glob.glob('dj2/logfiles/*Fluorinated*')
+dj2_fulldata = pd.read_csv('dj2/data/dj2_fulldata.csv', index_col=0)
+dj2_neutrallogfiles_unsub = list(set(dj2neutral_logfiles) - set(dj2methyl_logfiles) - set(dj2fluorine_logfiles))
+dj2_sub_fulldata = pd.read_csv('dj2/dj2.1/dj2_sub_fulldata.csv')
 
 dj3 = pd.read_csv('dj3/dj3.csv')
 #dj3_for_dj1 = pd.read_csv('dj3/dj3_for_dj1.csv')
@@ -97,26 +66,16 @@ dj3anion_logfiles = glob.glob('dj3/logfiles/*anion*')
 dj3bromine_logfiles = glob.glob('dj3/logfiles/*bromine*')
 dj3neutral_logfiles = list(set(dj3_logfiles) - set(dj3anion_logfiles) - set(dj3bromine_logfiles))
 
-dj3_full_atom = pd.read_csv('dj3/dj3_full_atom_df.csv')
-dj3_full_pair = pd.read_csv('dj3/dj3_full_pair_df.csv')
-dj3_train = pd.read_csv('dj3/dj3_train.csv_atom_df.csv')
-dj3_test_atom = pd.read_csv('dj3/dj3_test.csv_pair_df.csv')
+#dj3_full_atom = pd.read_csv('dj3/dj3_full_atom_df.csv')
+#dj3_full_pair = pd.read_csv('dj3/dj3_full_pair_df.csv')
+#dj3_train = pd.read_csv('dj3/dj3_train.csv_atom_df.csv')
+#dj3_test_atom = pd.read_csv('dj3/dj3_test.csv_pair_df.csv')
 
 
 xyzfiles = glob.glob('xyzfiles/*')
 dj1_dj2_fulldata = pd.concat([dj1_clean_fulldata, dj2_fulldata], axis=0)
-dj1_dj2_neutral_logfiles = dj1neutral_logfiles + dj2neutral_logfiles
-
-'''structures= logfile_analysis_workflow('dj2/logfiles', outname=None, calc_check=True, calc_data=False, plot_map=False, write=False)
-
-with open('dj2_checked_files.txt', 'a+') as f:
-    for i in structures[0] + structures[1]:
-        for line in f:
-            if line.endswith(i):
-                break
-            else:
-                print(date.today(), i, file=f)
-'''
+dj1_dj2_neutral_logfiles = dj1neutral_logfiles + dj2_neutrallogfiles_unsub
+test = np.array(dj1neutral_logfiles + dj2_neutrallogfiles_unsub)
 
 '''anion_diff = []
 bromine_diff = []
@@ -154,79 +113,45 @@ dj3_overlapped_structures = ['DR001', 'DR002', 'DR003', 'DR005', 'DR006', 'DR007
                   'DR063', 'DR064']
 
 dj3_for_dj1_structures = [x for x in dj3.Regid.unique() if x not in dj3_overlapped_structures]
+dj1_sub_and_dj2_fulldata = dj1_sub_fulldata.append(dj2_fulldata)
+
+dj1sub_atom = pd.read_csv('dj1/dj1.1/dj1_ext_atom_df.csv')
+dj2_atom = pd.read_csv('dj2/imp_inputs/dj2_full_atom_df.csv')
+
+dj1_s = dj1sub_atom['molecule_name'].unique()
+dj2_s = dj2_atom['molecule_name'].unique()
+
+dj2_real = [x for x in dj2_s if x not in dj1_s]
+
+dj2_logfiles_for_dj1 = []
+k = [x for x in dj2_s if x in dj1_s]
+
+for i in dj2_neutrallogfiles_unsub:
+    for j in dj2_real:
+        if j + '_' in i:
+
+            dj2_logfiles_for_dj1.append(i) if i not in dj2_logfiles_for_dj1 else dj2_logfiles_for_dj1
 
 
-#fulldata_filter(VEHICLe_dataframe=VEHICLe, calculate_properties_dataframe=dj1_clean_fulldata, outname='dj1/images/dj1_FDfilter_ActMap_A-0.6-1.5_Ea-0.6-0.8',
- #               a_upper=1.5, a_lower=0.0, ea_upper=0.8, ea_lower=0.6)
+dj1_sub_and_dj2_unsub = dj1neutral_logfiles + dj2_logfiles_for_dj1
 
-#selectivity_filter(VEHICLe_dataframe=VEHICLe, calculate_properties_dataframe=dj1_clean_fulldata,
-#                   outname='dj1/images/dj1_SFilter_2.0-2.5', s_lower=2.0, s_upper=2.5, write=True)
+dj2_sub_atom = pd.read_csv('dj2/dj2.1/dj2_sub_atom_df.csv')
+dj2_sub_pair = pd.read_csv('dj2/dj2.1/dj2_sub_pair_df.csv')
 
-#logfile_analysis_workflow(logfilelocation='dj2/logfiles', xyzfilelocation='dj2/xyzfiles', outname='dj2/dj2', calc_check=False,
-#                          calc_data=True, calc_rel_data=True, plot_map=False, write=True)
+dj1_atom = pd.read_csv('dj1/imp_inputs/dj1_full_atom_df.csv')
+dj1_pair = pd.read_csv('dj1/imp_inputs/dj1_full_pair_df.csv')
 
-#plot_activation_map(calculate_properties_dataframe=dj3_fulldata, outname='dj3/dj3_activationmap_unbound')
+dj2_atom = pd.read_csv('dj2/imp_inputs/dj2_full_atom_df.csv')
 
-#fulldata_filter(VEHICLe_dataframe=dj3, calculate_properties_dataframe=dj3_fulldata, outname='dj3/images/check',
-#                a_upper=100, a_lower=3.0, ea_upper=2.00, ea_lower=0.0)
+exc = dj2_atom['molecule_name'].unique()
 
-#impression_input_workflow(logfiles=dj3neutral_logfiles, fulldata_df=dj3_fulldata, outname='dj3/dj3_full')
+#exclude_structures(exc, dj1_atom, dj1_pair, outname='dj2/dj2.1/dj1_unsub_test_for_dj2_sub')
 
-#samp = every2nd_sampling(dj1neutral_logfiles)
+syn = synthesis_filter(dj2, export=False)
 
-#impression_input_workflow(logfiles=samp[0], fulldata_df=dj1_fulldata, outname='dj1/dj1_train', write=True)
-#impression_input_workflow(logfiles=samp[1], fulldata_df=dj1_fulldata, outname='dj1/dj1_test', write=True)
+djr_filter(syn, dj2_fulldata, outname='dj2/dj2_synthesis_filter_split_0.8', djr_upper=1000, djr_lower=0, write=True)
 
-#plot_binary_activation_map(calculate_properties_dataframe=dj1_clean_fulldata, successful_activations=successful_activations,
-#                           selectivity_targets=[], exploration_targets=[],
-#                           outname='dj1/dj1_binary_activation_map', limit=1.2, write=True)
+#impression_input_workflow(neutral_logfiles=dj2neutral_logfiles, fulldata_df=dj2_sub_fulldata,
+ #                         outname='dj2/dj2.1/dj2_sub', write=True)
 
-#impression_input_workflow(logfiles=dj1_dj2_neutral_logfiles, fulldata_df=dj1_dj2_fulldata, outname='dj1_dj2_full')
-
-
-#s_upper = [0.9, 1.1, 1.3, 1.5, 1.7, 2.0, 2.5, 3.0]
-#s_lower = [0.5, 0.9, 1.1, 1.3, 1.5, 1.7, 2.0, 2.5]
-
-#for j, k in zip(s_lower, s_upper):
-
- #   outname = 'dj2/images/dj2_selectivity_filter_' + str(j) + '-' + str(k)
-
-  #  selectivity_filter(VEHICLe_dataframe=VEHICLe, calculate_properties_dataframe=dj2_fulldata, outname=outname,
-   #                        s_upper=k, s_lower=j, write=True)
-
-
-def classifier_input(vehicle_dataframe, calculate_properties_dataframe, outname, write=True):
-
-    regid = vehicle_dataframe['Regid']
-
-    class_dataframe = pd.DataFrame(columns=['Regid', 'Smiles', 'Activation'])
-
-    for i in regid:
-        activation = ''
-        props = calculate_properties_dataframe[calculate_properties_dataframe['Regid'] == i]
-        prop_nan = props.fillna(0)
-
-        anions = [j for j in prop_nan.columns if 'anion' in j]
-        bromines = [k for k in prop_nan.columns if 'bromine' in k]
-
-        if round(float(max(anions), 2))/round(float(max(bromines), 2)) < 1.20:
-            activation = 'Acidic'
-
-        else:
-            activation = 'Nucleophilic'
-
-        data = {'Regid': i, 'Smiles': vehicle_dataframe[vehicle_dataframe['Regid'] == i].Smiles.value,
-                'Activation': activation}
-
-        class_dataframe = class_dataframe.append(data)
-
-        print(data)
-
-
-#classifier_input(vehicle_dataframe=dj1_clean, calculate_properties_dataframe=dj1_clean_fulldata, outname=None)
-
-aemols = logfile_to_aemol(glob.glob('dj2\\logfiles\\S447_2021-12-10_wb97xd_631gd_opt.log'))
-
-for i in aemols:
-    add_methyls(i)
-
+#logfile_analysis_workflow('dj2/logfiles', 'dj2/xyzfiles', 'dj2/dj2_sub', calc_check=False, plot_map=True)

@@ -6,10 +6,11 @@ from tqdm import tqdm
 import glob
 
 
-def bromines_from_smiles(dataframe):
+def bromines_from_smiles(dataframe, workflow=False):
 
-    print('PLEASE NOTE: If you are using bromine_generation.bromines_from_smiles outside of '
-          'workflow.comfile_generation_workflow you need to append blank lines to all generated comfiles')
+    if not workflow:
+        print('PLEASE NOTE: If you are using neutral_generation.basehet_from_smiles outside of '
+              'workflow.comfile_generation_workflow you need to append blank lines to all generated comfiles')
 
     regid = dataframe['Regid']
 
@@ -18,6 +19,8 @@ def bromines_from_smiles(dataframe):
         C_numbering = []
         Het_index = []
         comfiles = glob.glob('comfiles/' + str(l) + '_*')
+        bromine_comfiles = [x for x in comfiles if 'anion' not in x]
+        neutral_comfiles = [y for y in bromine_comfiles if 'bromine' not in y]
         index_file = glob.glob('txt_files/' + str(l) + '_indexing.txt')
         row = dataframe[dataframe.Regid == l]
         smiles = row.Smiles.item()
@@ -50,7 +53,7 @@ def bromines_from_smiles(dataframe):
 
         match_Cnum_Cindex = zip(C_index_list, C_numbering)
 
-        for file in comfiles:
+        for file in neutral_comfiles:
             todays_date = str(date.today())
             split = file.split('\\')
             name = split[1].split('_')

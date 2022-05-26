@@ -6,15 +6,18 @@ from rdkit.Chem import AllChem
 from datetime import date
 from tqdm import tqdm
 
-def anions_from_smiles(dataframe):
+def anions_from_smiles(dataframe, workflow=False):
 
-    print('PLEASE NOTE: If you are using anion_generation.anions_from_smiles outside of '
-          'workflow.comfile_generation_workflow you need to append blank lines to all generated comfiles')
+    if not workflow:
+        print('PLEASE NOTE: If you are using neutral_generation.basehet_from_smiles outside of '
+              'workflow.comfile_generation_workflow you need to append blank lines to all generated comfiles')
 
     regid = dataframe['Regid']
 
     for l in tqdm(regid):
         comfiles = glob.glob('comfiles/' + str(l) + '_*')
+        anion_comfiles = [x for x in comfiles if 'bromine' not in x]
+        neutral_comfiles = [y for y in anion_comfiles if 'anion' not in y]
         index_file = glob.glob('txt_files/' + str(l) + '_indexing.txt')
         H_index_list = []
         C_index_list = []
@@ -54,7 +57,7 @@ def anions_from_smiles(dataframe):
 
         todays_date = str(date.today())
 
-        for file in comfiles:
+        for file in neutral_comfiles:
             split = file.split('\\')
             name = split[1].split('_')
             for m in index_file:

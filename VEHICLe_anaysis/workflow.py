@@ -8,22 +8,24 @@ from calculation_check import opt_check, output_structure_check
 from property_calculate import calculate_properties
 from property_calculate import calculate_relative_properties
 from plots import plot_activation_map
-from impression_input import logfile_to_aemol, write_imp_input
+from impression_input import file_to_aemol, write_imp_input
 from sampling import get_tm_df, get_fps_ids
 from calculation_check import comfile_check
 from tqdm import tqdm
 
 def comfile_generation_workflow(dataframe):
-    basehet_from_smiles(dataframe)
-    anions_from_smiles(dataframe)
-    bromines_from_smiles(dataframe)
+    basehet_from_smiles(dataframe, workflow=True)
+    anions_from_smiles(dataframe, workflow=True)
+    bromines_from_smiles(dataframe, workflow=True)
 
-    comfiles = glob.glob('neutral_comfiles/*') + glob.glob('anion_comfiles/*') + glob.glob('bromine_comfiles/*')
+    comfiles = glob.glob('comfiles/*')
     regids = dataframe['Regid']
+
     for i in comfiles:
         with open(i, 'a') as f:
             f.write('\n\n')
             f.close()
+
     comfile_check(comfiles=comfiles, sampled_structures=regids)
 
 def logfile_analysis_workflow(logfilelocation, xyzfilelocation, outname, calc_check=True, calc_data=True, calc_rel_data=True,
@@ -45,7 +47,7 @@ def logfile_analysis_workflow(logfilelocation, xyzfilelocation, outname, calc_ch
                 print(i, file=f)
 
         with open(outname + '_bad_structures.txt', 'w') as p:
-            for j in bad_structures:
+            for j in [x for x in bad_structures if x not in failed_runs]:
                 print(j, file=p)
 
     if calc_data:
@@ -61,7 +63,7 @@ def logfile_analysis_workflow(logfilelocation, xyzfilelocation, outname, calc_ch
         plot_activation_map(pd.read_csv(outname + '_fulldata.csv'), outname + '_activation_map.png')
 
 
-def impression_input_workflow(logfiles, fulldata_df, outname, write=True):
+def impression_input_workflow(neutral_logfiles, fulldata_df, outname, write=True):
     '''
 
     :param logfiles: should be the neutral logfiles for the structures you want to use
@@ -71,7 +73,7 @@ def impression_input_workflow(logfiles, fulldata_df, outname, write=True):
     :return: atom_df, pair_df for structures you inputted at the start
     '''
 
-    aemols = logfile_to_aemol(logfiles, write=False)
+    aemols = file_to_aemol(neutral_logfiles, write=False)
     imp_input = write_imp_input(aemols=aemols, fulldata_df=fulldata_df, outname=outname, write=write)
 
     return imp_input[0], imp_input[1]

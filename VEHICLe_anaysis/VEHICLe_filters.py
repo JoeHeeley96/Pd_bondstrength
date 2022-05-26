@@ -11,7 +11,7 @@ def nonetype_filter(dataframe):
         print(i.GetNumAtoms())
 
 def synthesis_filter(dataframe, export):
-    synthesis_filtered=dataframe[dataframe.Pgood!=0]
+    synthesis_filtered=dataframe[dataframe.Pgood>=0.8]
 
     if export == 'yes':
         print_to_csv(synthesis_filtered, 'Synthesis_filter')
@@ -201,11 +201,11 @@ def fulldata_filter(VEHICLe_dataframe, calculate_properties_dataframe, outname,
 
         img.save(outname + '.png', pgi=(1200))
 
-def selectivity_filter(VEHICLe_dataframe, calculate_properties_dataframe, outname,
-                    s_upper=1.2, s_lower=0.5, write=True):
+def djr_filter(VEHICLe_dataframe, calculate_properties_dataframe, outname,
+                    djr_upper=1.2, djr_lower=0.5, write=True):
 
-    if s_upper == 1.2:
-        if s_lower == 0.5:
+    if djr_upper == 1.2:
+        if djr_lower == 0.5:
             print('-----Default criteria used------')
 
     regid = list(set(calculate_properties_dataframe.Regid))
@@ -251,11 +251,11 @@ def selectivity_filter(VEHICLe_dataframe, calculate_properties_dataframe, outnam
         if len(relative_acidities) != len(relative_electro_affs):
             print('There is a problem with: ', i, 'please check!')
 
-        selectivity_metric = relative_acidities[0]/relative_electro_affs[0]
+        djr = relative_acidities[0]/relative_electro_affs[0]
 
-        if s_lower < selectivity_metric <= s_upper:
+        if djr_lower < djr <= djr_upper:
             structures.append(i)
-            selectivities.append(selectivity_metric)
+            selectivities.append(djr)
             rel_props.append([relative_acidities[0], relative_electro_affs[0]])
             positions.append(A_position + Ea_position)
 
@@ -310,4 +310,47 @@ def selectivity_filter(VEHICLe_dataframe, calculate_properties_dataframe, outnam
 
         img.save(outname + '.png', pgi=(1200))
 
+def atom_filter(vehicle_df, relative_properties_dataframe, criteria, outname, write_df=True, write_pic=True):
+    '''
+    Filters vehicle structures according to criteria
+    :param vehicle_df:
+    :param relative_properties_dataframe:
+    :param criteria: shoud be a dictionary of atomic number and count you want in the target structure
+    :param write_df:
+    :param write_pic:
+    :return:
+    '''
 
+    regid = vehicle_df['Regid']
+
+    filtered_data = pd.DataFrame()
+    structures = []
+    positions = []
+    highlight = []
+    colors = {}
+    selectivities = []
+    rel_props = []
+    mol_list = []
+    legend_strings = []
+
+    for i in tqdm(regid):
+
+        truth_index = []
+        row = vehicle_df[vehicle_df['Regid'] == i]
+        rel_row = relative_properties_dataframe[relative_properties_dataframe['Regid'] == i]
+        smiles = row['Smiles'].values[0]
+        mol = Chem.MolFromSmiles(smiles)
+        Hmol = Chem.AddHs(mol)
+        type_array = np.zeros(Hmol.GetNumAtoms(), dtype=np.int32)
+
+        for j, atoms in enumerate(Hmol.GetAtoms()):
+            type_array[j] = atoms.GetAtomicNum()
+
+        for atom, count in criteria.items():
+            if np.count_nonzero(type_array == atom, axis=0) <= count:
+                truth_index.append(True)
+
+        if len(truth_index) == len(criteria.keys()):
+            filtered_data = filtered_data.append(row)
+
+    return filtered_data

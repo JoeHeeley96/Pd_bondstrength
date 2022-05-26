@@ -269,13 +269,13 @@ def plot_binary_activation_map(calculate_properties_dataframe, successful_activa
         for j in successful_activations:
             if i == j:
                 ax1.scatter(relative_electro_affs, relative_acidities,
-                            edgecolors='green', facecolors='none', zorder=3, s=140)
+                            edgecolors='green', facecolors='none', zorder=4, s=140)
 
             else:
 
                 if relative_acidities[0] and relative_electro_affs[0] == 1:
                     ax1.scatter(relative_electro_affs[0], relative_acidities[0],
-                                marker='x', color='green', zorder=3)
+                                marker='x', color='green', zorder=4)
 
         if len(relative_acidities) == 0:
             print('no ch bond', i)
@@ -291,12 +291,12 @@ def plot_binary_activation_map(calculate_properties_dataframe, successful_activa
         for k in selectivity_targets:
             if i == k:
                 ax1.scatter(relative_electro_affs, relative_acidities,
-                            edgecolors='orange', facecolors='none', zorder=4, s=5)
+                            edgecolors='black', facecolors='none', zorder=3, s=140)
 
         for l in exploration_targets:
             if i == l:
                 ax1.scatter(relative_electro_affs, relative_acidities,
-                            edgecolors='white', facecolors='none', zorder=4, s=5)
+                            edgecolors='black', facecolors='none', zorder=3, s=140)
 
 
     x = np.linspace(0, 100.0, 500)
@@ -317,22 +317,22 @@ def plot_binary_activation_map(calculate_properties_dataframe, successful_activa
     G_ring = mlines.Line2D([], [], markeredgecolor='green', markerfacecolor='None', marker='o', linestyle='None',
                            markersize=7, label='Experimentally Observed')
 
-    O_ring = mlines.Line2D([], [], markeredgecolor='orange', markerfacecolor='None', marker='o', linestyle='None',
-                           markersize=4, label='Selectivity Test')
+    O_ring = mlines.Line2D([], [], markeredgecolor='black', markerfacecolor='None', marker='o', linestyle='None',
+                           markersize=7, label='Exploration Targets')
 
-    P_ring = mlines.Line2D([], [], markeredgecolor='white', markerfacecolor='None', marker='o', linestyle='None',
-                           markersize=4, label='Exploration Targets')
+    #P_ring = mlines.Line2D([], [], markeredgecolor='white', markerfacecolor='None', marker='o', linestyle='None',
+     #                      markersize=4, label='Exploration Targets')
 
     plt.plot(x, y, label='Boundary', color='black', linestyle='--', zorder=3)
 
     plt.xlabel('Relative Electrophile Affinity')
     plt.ylabel('Relative Acidity')
-    plt.title('DJ2 Binary Activation "Heat" Map')
-    plt.gca().add_patch(Polygon([[0.1, (0.1*limit)], [3.0, (3.0*limit)], [0.9, 11]], facecolor='salmon',edgecolor='salmon', zorder=1, closed=True))
+    plt.title('DJ1 Binary Activation "Heat" Map')
+    plt.gca().add_patch(Polygon([[0.1, (0.1*limit)], [3.0, (3.0*limit)], [0.9, 11]], facecolor='salmon', edgecolor='salmon', zorder=1, closed=True))
     plt.gca().add_patch(Polygon([[0.1, (0.1*limit)], [3.0, (3.0*limit)], [0.9, -11]], color='lightblue', zorder=1))
-    plt.xlim(0.35, 1.4)
-    plt.ylim(0.09, 10.0)
-    plt.legend(handles=[Ea_cross, A_cross, G_cross, G_ring, O_ring, P_ring], prop={'size': 7.8}, bbox_to_anchor=(0.997, 0.997), loc=1, borderaxespad=0)
+    plt.xlim(0.6, 1.25)
+    plt.ylim(0.0, 2.6)
+    plt.legend(handles=[Ea_cross, A_cross, G_cross, G_ring, O_ring], prop={'size': 7.8}, bbox_to_anchor=(0.997, 0.997), loc=1, borderaxespad=0)
 
     if write:
         plt.savefig(outname, dpi=(600))
