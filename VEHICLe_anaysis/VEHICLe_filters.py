@@ -354,3 +354,24 @@ def atom_filter(vehicle_df, relative_properties_dataframe, criteria, outname, wr
             filtered_data = filtered_data.append(row)
 
     return filtered_data
+
+def dataset_count(vehicle_df):
+    '''
+    Counts the number of CH bonds in a given dataset
+    :param vehicle_df: the vehicle df you want ot count
+    :return:
+    '''
+
+    smiles = vehicle_df['Smiles']
+
+    for i in tqdm(smiles):
+        mol = Chem.MolFromSmiles(i)
+        Hmol = Chem.AddHs(mol)
+        type_array = np.zeros(Hmol.GetNumAtoms(), dtype=np.int32)
+
+        for j, atoms in enumerate(Hmol.GetAtoms()):
+            type_array[j] = atoms.GetAtomicNum()
+
+        for atom, count in criteria.items():
+            if np.count_nonzero(type_array == atom, axis=0) <= count:
+                truth_index.append(True)

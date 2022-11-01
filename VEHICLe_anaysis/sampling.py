@@ -35,11 +35,7 @@ def first200_sampling(neutral_logfiles):
 def every2nd_sampling(neutral_logfiles):
 
     training_set = sorted(neutral_logfiles, key=str)[0::2]
-    test_set = []
-
-    for i in neutral_logfiles:
-        if i not in training_set:
-            test_set.append(i)
+    test_set = [x for x in neutral_logfiles if x not in training_set]
 
     print('training set contains: ', len(training_set), 'molecules')
     print('test set contains: ', len(test_set), 'molecules')

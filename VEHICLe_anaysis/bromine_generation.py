@@ -67,16 +67,15 @@ def bromines_from_smiles(dataframe, workflow=False):
                                 bromine_chkfilename = name[0] + '_' + str(o) + 'bromine_' + todays_date + '_' + name[
                                     2] + '-' + name[3] + '_opt.chk'
                                 split = line.split(' ')
-                                Br_xcoord = float(split[2])
-                                Br_ycoord = float(split[3])
-                                Br_zcoord = float(split[4])
+                                Br_xcoord = float(split[3])
+                                Br_ycoord = float(split[5])
+                                Br_zcoord = float(split[7])
 
                                 Br_coords = (str(Br_xcoord) + ' ' + str(Br_ycoord) + ' ' + str(Br_zcoord))
 
                         with open(bromine_comfilename, 'w') as q:
                             with open(file) as f:
                                 for comline in f:
-
                                     if comline.startswith('%chk='):
                                         print('%chk=' + bromine_chkfilename, file=q)
 
@@ -86,15 +85,13 @@ def bromines_from_smiles(dataframe, workflow=False):
                                     elif comline == '0 1\n':
                                         print('\n1 1', file=q)
 
-                                    elif Br_coords in comline:
-                                        comsplit=comline.split()
+                                    elif str(Br_xcoord) in comline:
+                                        comsplit = comline.split()
                                         if Br_xcoord == float(comsplit[1]):
                                             if Br_ycoord == float(comsplit[2]):
                                                 if Br_zcoord == float(comsplit[3]):
                                                     print(comline.strip('\n'), file=q)
                                                     print('Br', Br_xcoord, Br_ycoord, str((1.870000000000000000 + Br_zcoord)), file=q)
-
-
 
                                     elif comline == '\n':
                                         pass

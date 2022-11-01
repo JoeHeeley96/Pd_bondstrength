@@ -1,0 +1,61 @@
+from rdkit import Chem
+from rdkit.Chem import AllChem, rdchem
+from file_generation import xyzcoords_from_type_array
+import numpy as np
+from neutral_generation import write_gaussian_command_with_regid, com_from_xyz_coords
+import os
+from tqdm import tqdm
+from file_generation import write_orca_file_for_directed_activation_opt_and_freq
+
+def palladate_nitrogens(vehicle_dataframe):
+
+    Pd_frag = Chem.MolFromSmiles('CC1=[O+][Pd-2]([P+](C2CCCCC2)(C3=CC=CC=C3C4=C(OC)C=CC=C4OC)C5CCCCC5)O1')
+
+    for id in tqdm(vehicle_dataframe['Regid']):
+
+        row = vehicle_dataframe[vehicle_dataframe.Regid == id]
+        smiles = row.Smiles.item()
+
+        het = Chem.MolFromSmiles(smiles)
+        het_h = Chem.AddHs(het)
+
+        combo = Chem.CombineMols(Pd_frag, het_h)
+
+        combo_mols = []
+        N_idx = []
+
+        for atom in combo.GetAtoms():
+            if atom.GetAtomicNum() == 7:
+                if len(atom.GetNeighbors()) == 2:
+                    edcombo = rdchem.EditableMol(combo)
+                    N_idx.append(atom.GetIdx())
+                    edcombo.AddBond(atom.GetIdx(), 3, order=rdchem.BondType.DATIVE)
+                    combo_mols.append(Chem.AddHs(edcombo.GetMol()))
+
+        for i, k in zip(combo_mols, N_idx):
+
+            indexfilename = 'txt_files/' + str(k) + '-' + id + '.idx'
+            inpfilename = 'directed_activation/' + str(k) + '-' + id + '_opt-freq_wb97xd.inp'
+            xyzfilename = str(k) + '-' + id + '_opt-freq_wb97xd.xyz'
+
+            AllChem.EmbedMolecule(i)
+            AllChem.MMFFOptimizeMolecule(i)
+            conf = i.GetConformer()
+            coordinates = conf.GetPositions()
+            xyz_list = np.array(coordinates.tolist(), dtype=float)
+
+            coords_2d = AllChem.Compute2DCoords(i)
+            type_array = np.zeros(i.GetNumAtoms(), dtype=np.int32)
+            index_list = []
+
+            for j, atoms in enumerate(i.GetAtoms()):
+                type_array[j] = atoms.GetAtomicNum()
+                index = atoms.GetIdx()
+                index_list.append(index)
+
+            match_coords = zip(type_array, index_list, xyz_list)
+
+            xyzcoords_from_type_array(indexfilename, match_coords)
+            write_orca_file_for_directed_activation_opt_and_freq(str(k) + '_' + id, indexfilename, inpfilename)
+
+            os.remove(indexfilename)

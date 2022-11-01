@@ -2,6 +2,8 @@ import numpy as np
 from mol_translator import aemol
 from mol_translator.properties.structure.bond_angle import get_bond_angles
 from tqdm import tqdm
+import glob
+import os
 
 def comfile_check(comfiles, sampled_structures):
 
@@ -95,3 +97,21 @@ def output_structure_check(xyzfiles, logfiles):
     print('Large variances detected in ', len(badfiles), ' output structures:', badfiles)
 
     return badfiles
+
+def quick_dj1_sub_check():
+
+    for i in glob.glob('comfiles/*'):
+
+        if os.path.isdir:
+            logs = glob.glob(i + '/*')
+            failed_runs = []
+
+            #for log in logs:
+                #files = glob.glob(logfilelocation + '/*')
+                #xyzfiles = glob.glob(xyzfilelocation + '/*')
+                #for i in tqdm(files):
+                 #   if opt_check(i, 'Error'):
+                  #      failed_runs.append(i)
+
+                #bad_structures = output_structure_check(xyzfiles=xyzfiles, logfiles=files)
+                #print('Found', len(failed_runs), 'failed structures:', failed_runs)

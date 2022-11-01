@@ -1,5 +1,5 @@
 from VEHICLe_read import read_mol_from_smiles
-from xyzfile_generation import xyzcoords_from_type_array
+from file_generation import xyzcoords_from_type_array
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from datetime import date

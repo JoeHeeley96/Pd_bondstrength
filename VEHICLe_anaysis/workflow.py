@@ -12,6 +12,7 @@ from impression_input import file_to_aemol, write_imp_input
 from sampling import get_tm_df, get_fps_ids
 from calculation_check import comfile_check
 from tqdm import tqdm
+import os
 
 def comfile_generation_workflow(dataframe):
     basehet_from_smiles(dataframe, workflow=True)
@@ -22,11 +23,12 @@ def comfile_generation_workflow(dataframe):
     regids = dataframe['Regid']
 
     for i in comfiles:
-        with open(i, 'a') as f:
-            f.write('\n\n')
-            f.close()
+        if not os.path.isdir(i):
+            with open(i, 'a') as f:
+                f.write('\n\n')
+                f.close()
 
-    comfile_check(comfiles=comfiles, sampled_structures=regids)
+    #comfile_check(comfiles=comfiles, sampled_structures=regids)
 
 def logfile_analysis_workflow(logfilelocation, xyzfilelocation, outname, calc_check=True, calc_data=True, calc_rel_data=True,
                               plot_map=False, write=True):

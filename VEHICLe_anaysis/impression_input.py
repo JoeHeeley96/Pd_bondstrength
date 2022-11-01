@@ -113,7 +113,8 @@ def write_imp_input(aemols, fulldata_df, outname, write=True):
 
     return final_atom_df, pair_df
 
-def classifier_input(vehicle_dataframe, calculate_properties_dataframe, outname, djr_lim=1.2, write=True):
+def classifier_input(vehicle_dataframe, relative_properties_dataframe, outname,
+                     djr_lim=1.21, acid_lim=0.67, nuc_lim=0.84, write=True):
 
     '''
     Writes a dataframe for the input of a classification machine. Will set acidic structures to 1 and nucleophilic
@@ -127,57 +128,60 @@ def classifier_input(vehicle_dataframe, calculate_properties_dataframe, outname,
     :return:
     '''
 
-    regid = calculate_properties_dataframe['Regid']
+    regid = relative_properties_dataframe['Regid']
 
-    class_dataframe = pd.DataFrame(columns=['Regid', 'Smiles', 'djr', 'Activation'])
+    class_dataframe = pd.DataFrame(columns=['Regid', 'Smiles', 'djr', 'Activation'], index=[0])
 
     for i in regid:
 
         acidities = {}
         elec_affs = {}
-        relative_acidities = []
-        relative_electro_affs = []
 
-        df = calculate_properties_dataframe.loc[calculate_properties_dataframe['Regid'] == i]
+        df = relative_properties_dataframe.loc[relative_properties_dataframe['Regid'] == i]
+
         for j in df.columns:
             if 'anion' in j:
-                acidities[j] = float(df[j].values)
+                if df[j].values != 0:
+                    acidities[j] = float(df[j].values)
+
             elif 'bromine' in j:
                 elec_affs[j] = float(df[j].values)
 
-        for m, c in acidities.items():
-            if c == (min(acidities.values())):
-                relative_acidities.append(
-                    24.044391262487466 / c) if 24.044391262487466 / c not in relative_acidities else relative_acidities
+        most_acidic = round(max(acidities.values()), 2)
+        most_nuc = round(max(elec_affs.values()), 2)
 
-                if len(relative_acidities) == 1:
-                    break
+        djr = round(most_acidic / most_nuc, 2)
 
-        for f, l in elec_affs.items():
-            if l == max(elec_affs.values()):
-                relative_electro_affs.append(
-                    l / 183.64724482984454) if l / 183.64724482984454 not in relative_electro_affs else relative_electro_affs
+        activation = -404.404
 
-        if len(relative_acidities) != len(relative_electro_affs):
-            print('There is a problem with: ', i, 'please check!')
-
-        djr = round(relative_acidities[0] / relative_electro_affs[0], 2)
-
-        if djr > djr_lim:
-            activation = 1
-
-        else:
+        if most_acidic < acid_lim and most_nuc < nuc_lim:
             activation = 0
 
-        data = {'Regid': i, 'Smiles': vehicle_dataframe[vehicle_dataframe['Regid'] == i].Smiles.values[0], 'djr': djr,
-                'Activation': activation}
+        elif most_acidic > acid_lim and most_nuc < nuc_lim:
+            activation = 1
 
-        class_dataframe = class_dataframe.append(data, ignore_index=True)
+        elif most_acidic > acid_lim and most_nuc > nuc_lim:
+            if djr > djr_lim:
+                activation = 1
 
-    with open(outname, 'w') as f:
+            else:
+                activation = 2
+
+        else:
+            activation = 2
+
+        if activation == -404.404:
+            print(i, most_acidic, most_nuc, djr)
+
+        data = pd.DataFrame({'Regid': i, 'Smiles': vehicle_dataframe[vehicle_dataframe['Regid'] == i].Smiles.values[0], 'djr': djr,
+                'Activation': activation}, index=[0])
+
+        class_dataframe = pd.concat([class_dataframe, data])
+
+    with open(outname +'.csv', 'w') as f:
         print(class_dataframe.to_csv(sep=','), file=f)
 
-def exclude_structures(structures_to_exclude, atom_df, pair_df, outname, write=True):
+def exclude_structures_imp_dfs(structures_to_exclude, atom_df, pair_df, outname, write=True):
 
     excluded_atom = atom_df.drop(atom_df.index[atom_df['molecule_name'].isin(structures_to_exclude)])
     excluded_pair = pair_df.drop(pair_df.index[pair_df['molecule_name'].isin(structures_to_exclude)])
@@ -193,5 +197,40 @@ def exclude_structures(structures_to_exclude, atom_df, pair_df, outname, write=T
 
     return excluded_atom, excluded_pair
 
-#def merge_datasets(dataset1_atom, dataset1_pair, dataset2_atom, dataset2_pair):
+def exclude_structures_prop_dfs(structures_to_exclude, df1, df2, write=True):
 
+    excluded_df1 = df1.drop(df1.index[df1['Regid'].isin(structures_to_exclude)])
+    excluded_df2 = df2.drop(df2.index[df2['Regid'].isin(structures_to_exclude)])
+
+    print('Removed:',
+          len([x for x in df1['Regid'].unique() if x not in excluded_df1['Regid'].unique()]),
+          'structures from df1')
+
+    print('Removed:',
+          len([x for x in df2['Regid'].unique() if x not in excluded_df2['Regid'].unique()]),
+          'structures from df2')
+
+    if write:
+        print('you need to write the code to save the excluded dfs ya dingus')
+
+    return excluded_df1, excluded_df2
+
+def merge_datasets(dataset1_atom, dataset1_pair, dataset2_atom, dataset2_pair, outname, write=True):
+
+    #use the exclude_structures function to remove any overlapping structures between the two input dataframes
+    # before concatenation
+    structures_to_exclude = dataset1_atom['molecule_name'].unique()
+
+    unique_dfs = exclude_structures_imp_dfs(structures_to_exclude, dataset2_atom, dataset2_pair, outname=None, write=False)
+
+    join_atom = pd.concat([dataset1_atom, unique_dfs[0]], axis=0)
+    join_pair = pd.concat([dataset1_pair, unique_dfs[1]], axis=0)
+
+    if write:
+        with open(outname + '_atom_df.csv', 'w') as f:
+            print(join_atom.to_csv(), file=f)
+
+        with open(outname + '_pair_df.csv', 'w') as p:
+            print(join_pair.to_csv(), file=p)
+
+    return join_atom, join_pair
