@@ -3,7 +3,8 @@ import glob
 
 def type_dict(warning=True):
 
-    type_dict = {1: 'H', 3: 'Li', 5: 'B', 6: 'C', 7: 'N', 8: 'O', 9: 'F', 15: 'P', 16: 'S', 35: 'Br', 46: 'Pd'}
+    type_dict = {1: 'H', 3: 'Li', 5: 'B', 6: 'C', 7: 'N', 8: 'O', 9: 'F', 15: 'P', 16: 'S', 17: 'Cl',
+                 35: 'Br', 46: 'Pd', 53: 'I'}
 
     return type_dict
 
@@ -57,7 +58,7 @@ def write_orca_file_for_directed_activation_opt_and_freq(regid, indexfilename, i
 
     with open(inpfilename, 'w') as f:
 
-        f.write('! wB97x-d3bj def2-TZVP CPCM(Toluene) xyzfile opt freq\n')
+        f.write('! wB97x-d3bj def2-SVP CPCM(Toluene) xyzfile opt freq\n')
         f.write('%base "' + regid + 'OptFreq"\n')
         f.write('%maxcore 2000\n')
         f.write('%scf MaxIter 1500 end\n')
@@ -70,7 +71,7 @@ def write_orca_file_for_directed_activation_opt_and_freq(regid, indexfilename, i
 
             for indexline in p:
                 if 'Pd' in indexline:
-                    print(indexline[:2].strip('\n'), indexline[4:].strip('\n').lstrip(), 'newgto "def2-SVP" end', file=f)
+                    print(indexline[:2].strip('\n'), indexline[4:].strip('\n').lstrip(), 'newgto "def2-TZVP" end', file=f)
                 else:
                     print(indexline[0].strip('\n'), indexline[4:].strip('\n').lstrip(), file=f)
 

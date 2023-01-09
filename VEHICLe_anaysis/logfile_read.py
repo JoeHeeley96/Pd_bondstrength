@@ -1,9 +1,16 @@
 import pandas as pd
 import glob
 from neutral_generation import write_gaussian_command_with_regid
-from calculation_check import opt_check
 from file_generation import type_dict
 from mol_translator import aemol
+import numpy as np
+
+def opt_check(file, string_to_search):
+    with open(file, 'r') as f:
+        for line in f:
+            if string_to_search in line:
+                return True
+    return False
 
 def g16_scfread(file):
     energy = -404
@@ -14,6 +21,16 @@ def g16_scfread(file):
                 energy = float(items[4])
 
     return energy
+
+def g16_TCGread(file):
+    TCG = -404
+
+    with open(file, 'r') as f:
+        for line in f:
+            if 'Thermal correction to Gibbs Free Energy' in line:
+                items2 = line.split()
+                TCG = float(items2[-1])
+    return TCG
 
 def orca_scfread(file):
     energy = -404
@@ -87,7 +104,7 @@ def energy_readdata(file_locations, outname, write=True):
 
         return data
 
-def read_freq_calcs(freq_logfile_location):
+def check_freq_calcs(freq_logfile_location):
 
     files = glob.glob(freq_logfile_location + '/*.log')
     failed_runs = []
@@ -115,9 +132,64 @@ def read_freq_calcs(freq_logfile_location):
     print('Found', len(failed_runs), 'Failed runs')
     print('Found', len(imaginary_freqs), 'Imaginary Frequencies')
 
+def deltaG_readdata(freq_logfile_location, outname):
+
+    check_freq_calcs(freq_logfile_location)
+
+    energies = []
+    TCG_list = []
+    Regid = []
+    deltaG_au = []
+    structure = []
+    calctype = []
+
+    for i in glob.glob(freq_logfile_location + '/*.log'):
+        energy = g16_scfread(i)
+        TCG = g16_TCGread(i)
+        if energy != -404:
+            energies.append(energy)
+            x = i.split('\\')
+            z = x[-1].split('_')
+            Regid.append(z[0])
+            calctype.append(z[2])
+
+            if 'anion' in z[1]:
+                structure.append(z[1])
+
+            elif 'bromine' in z[1]:
+                structure.append(z[1])
+
+            else:
+                structure.append('Base_het')
+
+        if TCG != -404:
+            TCG_list.append(TCG)
+
+            deltaG_au.append(energy + TCG)
+
+        else:
+            print(i, 'Energy not found')
+
+    dict = {'Regid': Regid, 'Structure': structure, 'Energy': energies, 'TCG': TCG_list, 'Calculation': calctype,
+             'DeltaG_au': deltaG_au}
+
+    data = pd.DataFrame(dict)
+
+
+    with open(outname + '.csv', 'w') as y:
+        print(data.to_csv(sep=','), file=y)
+
+
+
 def comfile_to_aemol(comfile):
 
+    '''
+    :param comfile:
+    :return:
+    '''
+
     file = open(comfile)
+    print(comfile)
     typ_dict = type_dict()
 
     lines = file.readlines()
@@ -127,7 +199,27 @@ def comfile_to_aemol(comfile):
     types = []
     xyz = []
 
-    xyz = lines[6:]
+    coords = lines[6:]
 
-    #for i in xyz:
+    for i in [x for x in coords if x != '\n' and 'F\n' not in x]:
+
+        linsplit = i.split(' ')
+
+        types.extend([mr for mr, symb in typ_dict.items() if symb == linsplit[0]])
+
+        remove_space = [x for x in linsplit[1:] if not x.isspace()]
+
+        xyz.append([float(y) for y in remove_space if len(y) > 2])
+
+
+    #for index, atom in enumerate(len(types)):
+
+    amol = aemol(molid=id)
+
+    amol.structure['size'] = len(types)
+    amol.structure['xyz'] = np.array(xyz)
+    amol.structure['types'] = np.array(types)
+
+    return amol
+
 

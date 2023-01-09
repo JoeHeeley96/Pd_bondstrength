@@ -1,1 +1,0 @@
-from dscribe.descriptors import SOAP

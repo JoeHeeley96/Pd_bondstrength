@@ -83,7 +83,6 @@ def dj2_filter(dataframe, write=True):
     return filtered_data
 
 
-
 def NCN_filter(dataframe, export):
     ### This filter extracts molecules with C-C cores.
     filtered_data = pd.DataFrame({})
@@ -114,6 +113,117 @@ def NCN_filter(dataframe, export):
 
     if export == 'yes':
         print_to_csv(filtered_data, 'NCN')
+
+def directing_nitrogen_filter(vehicle_subset, ncs_atom_df, directed_activation_data, outname):
+
+    mol_list = []
+    highlight = []
+    colors = {}
+    legend_string = []
+
+    for i in ncs_atom_df['molecule_name'].unique():
+        smiles = vehicle_subset[vehicle_subset['Regid'] == i].Smiles.values
+        mol_props = ncs_atom_df[ncs_atom_df['molecule_name'] == i]
+        mol_act = directed_activation_data[directed_activation_data['Structure'].str.endswith(i)]
+
+        acidity = mol_props[mol_props['typestr'] == 'H']
+        nucleophilicity = mol_props[mol_props['typestr'] == 'C']
+
+        if len(mol_act) != 0:
+            h_idx = -404.404
+            ac_c_idx = -505.505
+            n_idx = int(mol_act.loc[mol_act['ExchG_relative'].idxmax()]['Structure'].split('-')[0]) - 34
+            ac_drop = acidity[acidity['shift'] != 0]
+            ac_idx = int(ac_drop.loc[ac_drop['shift'].idxmin()]['atom_index'])
+            nuc_idx = int(nucleophilicity.loc[nucleophilicity['shift'].idxmax()]['atom_index'])
+
+            mol = Chem.MolFromSmiles(smiles[0])
+            molh = Chem.AddHs(mol)
+            type_array = np.zeros(mol.GetNumAtoms(), dtype=np.int32)
+
+            for atoms in molh.GetAtoms():
+                if atoms.GetIdx() == n_idx:
+                    for carbon in atoms.GetNeighbors():
+                        if carbon.GetAtomicNum() == 6:
+                            for hydrogen in carbon.GetNeighbors():
+                                if hydrogen.GetAtomicNum() == 1:
+                                    h_idx = hydrogen.GetIdx()
+
+                elif atoms.GetIdx() == ac_idx:
+                    for c in atoms.GetNeighbors():
+                        if c.GetAtomicNum() == 6:
+                            ac_c_idx = c.GetIdx()
+
+            if h_idx != -404.404:
+                legend_string.append(i)
+                mol_list.append(mol)
+                highlight.append([n_idx, ac_c_idx, nuc_idx])
+
+    for p, j in enumerate(highlight):
+        if j[1] != j[2]:
+            colors[p] = {j[0]: (100, 84.3, 0), j[1]: (1,0,0), j[2]: (0,0,1)}
+        else:
+            colors[p] = {j[0]: (100, 84.3, 0), j[1]: (128, 0, 128)}
+
+    img = Draw.MolsToGridImage(mol_list, molsPerRow=6, highlightAtomLists=highlight, highlightAtomColors=colors,
+    legends=legend_string, subImgSize=(200, 200))
+
+    img.save(outname + '.png', pgi=(1200))
+
+
+def acidic_near_nitrogen(vehicle_subset, ncs_atom_df, directed_activation_data, outname):
+
+    mol_list = []
+    highlight = []
+    colors = {}
+    legend_string = []
+
+    for i in ncs_atom_df['molecule_name'].unique():
+        smiles = vehicle_subset[vehicle_subset['Regid'] == i].Smiles.values
+        mol_props = ncs_atom_df[ncs_atom_df['molecule_name'] == i]
+        mol_act = directed_activation_data[directed_activation_data['Structure'].str.endswith(i)]
+
+        acidity = mol_props[mol_props['typestr'] == 'H']
+        nucleophilicity = mol_props[mol_props['typestr'] == 'C']
+
+        if len(mol_act) != 0:
+            h_idx = -404.404
+            ac_c_idx = -505.505
+            n_idx = int(mol_act.loc[mol_act['ExchG_relative'].idxmax()]['Structure'].split('-')[0]) - 34
+            ac_drop = acidity[acidity['shift'] != 0]
+            ac_idx = int(ac_drop.loc[ac_drop['shift'].idxmin()]['atom_index'])
+            nuc_idx = int(nucleophilicity.loc[nucleophilicity['shift'].idxmax()]['atom_index'])
+
+            mol = Chem.MolFromSmiles(smiles[0])
+            molh = Chem.AddHs(mol)
+            type_array = np.zeros(mol.GetNumAtoms(), dtype=np.int32)
+
+            for atoms in molh.GetAtoms():
+                if atoms.GetIdx() == ac_idx:
+                    for carbon in atoms.GetNeighbors():
+                        ac_c_idx = carbon.GetIdx()
+                        for neighbor in carbon.GetNeighbors():
+                            for nitrogen in neighbor.GetNeighbors():
+                                if nitrogen.GetAtomicNum() == 7:
+                                    if len(nitrogen.GetNeighbors()) == 2:
+                                        h_idx = 1
+
+            if h_idx != -404.404:
+                legend_string.append(i)
+                mol_list.append(mol)
+                highlight.append([n_idx, ac_c_idx, nuc_idx])
+
+    for p, j in enumerate(highlight):
+        if j[1] != j[2]:
+            colors[p] = {j[0]: (100, 84.3, 0), j[1]: (1, 0, 0), j[2]: (0, 0, 1)}
+        else:
+            colors[p] = {j[0]: (100, 84.3, 0), j[1]: (128, 0, 128)}
+
+    img = Draw.MolsToGridImage(mol_list, molsPerRow=6, highlightAtomLists=highlight, highlightAtomColors=colors,
+                               legends=legend_string, subImgSize=(200, 200))
+
+    img.save(outname + '.png', pgi=(1200))
+
 
 def fulldata_filter(VEHICLe_dataframe, calculate_properties_dataframe, outname,
                     a_upper=1.5, a_lower=0.5, ea_upper=1.5, ea_lower=0.5, write=True):

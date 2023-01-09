@@ -14,12 +14,12 @@ def calculate_properties(dataset, outname, write=True):
         for j in basehet:
             for i in alist:
                 if 'anion' in i.Structure:
-                    acidity_au =(i[3] + -229.010318493) - (j + -228.425492536)
+                    acidity_au =(i[3] + -229.010318493) - (j + -228.403959536)
                     acidity_kcalpermol = acidity_au * 627.5
                     regid_dict[i[2] + '_acidity_kcalpermol'] = acidity_kcalpermol
 
                 elif 'bromine' in i.Structure:
-                    elec_affin_au = (j + -2571.17518775) - i[3]
+                    elec_affin_au = (j + -2571.19136375) - i[3]
                     elec_affin_kcalpermol = elec_affin_au * 627.5
                     regid_dict[i[2] + '_electrophile_affinity_kcalpermol'] = elec_affin_kcalpermol
 
@@ -27,6 +27,36 @@ def calculate_properties(dataset, outname, write=True):
 
     if write:
         with open(outname, 'w') as f:
+            print(property_data.to_csv(sep=','), file=f)
+    return property_data
+
+def calculate_deltaG(deltaG_rawdata, outname, write=True):
+
+    regId = list(set(deltaG_rawdata.Regid))
+    property_data = pd.DataFrame(columns=['Regid'])
+
+    for id in regId:
+        regid_dict = {'Regid': id}
+        regid_data = deltaG_rawdata[deltaG_rawdata['Regid'].str.fullmatch(id)]
+        alist = list(regid_data.itertuples(index=False))
+        basehet = (regid_data[regid_data['Structure'].str.contains('Base_het')]).Energy
+
+        for j in basehet:
+            for i in alist:
+                if 'anion' in i.Structure:
+                    acidity_au = (i[-1] + -229.046860464999) - (j + -228.477217341)
+                    acidity_kcalpermol = acidity_au * 627.5
+                    regid_dict[i[2] + '_acidity_kcalpermol'] = acidity_kcalpermol
+
+                elif 'bromine' in i.Structure:
+                    elec_affin_au = (j + -2571.16789474) - i[-1]
+                    elec_affin_kcalpermol = elec_affin_au * 627.5
+                    regid_dict[i[2] + '_electrophile_affinity_kcalpermol'] = elec_affin_kcalpermol
+
+        property_data = pd.concat([property_data, pd.DataFrame(regid_dict, index=[0])], ignore_index=True)
+
+    if write:
+        with open(outname + '.csv', 'w') as f:
             print(property_data.to_csv(sep=','), file=f)
     return property_data
 
@@ -59,6 +89,7 @@ def calculate_relative_properties(calculate_properties_dataframe, outname, write
 
 
 def find_average_diff(calculate_properties_dataframe):
+
     regids = calculate_properties_dataframe['Regid']
     diff_acidity = []
     diff_elec = []

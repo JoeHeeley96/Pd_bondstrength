@@ -5,6 +5,7 @@ from rdkit.Chem import AllChem
 from datetime import date
 import numpy as np
 from tqdm import tqdm
+import os
 
 def write_gaussian_command_with_regid(Regid, chkfilename, modredundant=False):
     with open('Gaussian_command.txt', 'w') as p:
@@ -33,7 +34,8 @@ def com_from_xyz_coords(indexfilename, comfilename):
                     print(gaussline.strip('\n'), file=fn)
 
                 for indexline in fd:
-                    print(indexline[0].strip('\n'), indexline[4:].strip('\n').lstrip(), file=fn)
+                    split = indexline.split(' ')
+                    print(split[0].strip('\n'), indexline[4:].strip('\n').lstrip(), file=fn)
 
 
 def write_indexfile(dataframe):
@@ -82,6 +84,8 @@ def basehet_from_smiles(dataframe, workflow=False):
 
         write_gaussian_command_with_regid(i, chkfilename)
         com_from_xyz_coords(indexfilename, comfilename)
+
+
 
 
 

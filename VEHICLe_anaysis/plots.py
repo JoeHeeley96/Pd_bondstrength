@@ -13,6 +13,8 @@ from matplotlib import animation
 import numpy as np
 from matplotlib.legend_handler import HandlerLine2D, HandlerTuple
 import matplotlib.lines as mlines
+from sklearn import linear_model
+from sklearn.metrics import r2_score
 #from rotation import rotanimate
 from mpl_toolkits.mplot3d import Axes3D
 
@@ -106,6 +108,7 @@ def plot_activation_map(calculate_properties_dataframe, outname, plot_title='Act
 
     plt.savefig(outname, dpi=(1200))
 
+
 def plot_3Dactivation_map(calculate_properties_dataframe, outname, animate):
     fig = plt.figure()
     ax1 = plt.subplot(111, projection='3d')
@@ -182,9 +185,9 @@ def plot_3Dactivation_map(calculate_properties_dataframe, outname, animate):
 
         plt.savefig(outname, dpi=(600))
 
+
 def plot_static_3D_plots(calculate_properties_dataframe, outname):
     print('fill me in to make a static plot')
-
 
 def plot_moving_3D_plots(calculate_properties_dataframe, outname):
     xdata=[]
@@ -227,6 +230,7 @@ def plot_moving_3D_plots(calculate_properties_dataframe, outname):
 
 
     plot_animation_3D(xdata,ydata,zdata,regids, outname)
+
 
 def plot_binary_activation_map(calculate_properties_dataframe, successful_activations, selectivity_targets,
                                exploration_targets, outname, limit=1.21, write=True):
@@ -476,6 +480,7 @@ def plot_acidity_vs_nucleophilicity(dj1, dj2, dj3, outname, write=True):
 
     plt.savefig(outname + '.png', dpi=(600))
 
+
 def plot_quadrant_activation_map(relative_properties_dataframe, successful_activations, unsuccessful_activations,
                                  targeted_activations, outname, acidity_limit=0.68, nucleophilicity_limit=0.84,
                                  djr_limit=1.22, write=True):
@@ -574,6 +579,7 @@ def plot_quadrant_activation_map(relative_properties_dataframe, successful_activ
 
     plt.savefig(outname + '.png', dpi=(1200))
 
+
 def dataset_count(dict_of_datasets, outname):
     '''
 
@@ -608,6 +614,7 @@ def dataset_count(dict_of_datasets, outname):
     plt.title('Count of Heterocyclic Properties')
     plt.legend(title='Property', bbox_to_anchor=(0.25, 1), prop={'size': 8})
     plt.savefig(outname + '.png')
+
 
 def plot_djr_barchart(list_of_structures, rel_prop_df, outname):
 
@@ -683,3 +690,54 @@ def plot_djr_barchart(list_of_structures, rel_prop_df, outname):
     plt.savefig(outname + '.png', dpi=(600))
 
 
+def deltaG_deltaE_compare(deltaE_fulldata, deltaG_fulldata, outname):
+
+    plt.clf()
+    fig1, ax1 = plt.subplots()
+    fig2, ax2 = plt.subplots()
+    num_colours = 29
+
+    cm = plt.get_cmap('hsv')
+    cNorm = colors.Normalize(vmin=0, vmax=num_colours - 3)
+    scalarMap = mplcm.ScalarMappable(norm=cNorm, cmap=cm)
+    ax1.set_prop_cycle(color=[scalarMap.to_rgba(i) for i in range(num_colours)])
+    ax2.set_prop_cycle(color=[scalarMap.to_rgba(i) for i in range(num_colours)])
+
+    regids = deltaG_fulldata['Regid']
+
+    for i in regids:
+
+        deltaE_data = deltaE_fulldata[deltaE_fulldata['Regid'] == i]
+        deltaG_data = deltaG_fulldata[deltaG_fulldata['Regid'] == i]
+
+        deltaE_ac = []
+        deltaG_ac = []
+
+        deltaE_ea = []
+        deltaG_ea = []
+
+        for column in deltaG_data.columns:
+            if 'anion' in column:
+                deltaE_ac.extend(list(deltaE_data[column].values))
+                deltaG_ac.extend(list(deltaG_data[column].values))
+
+            elif 'bromine' in column:
+                deltaE_ea.extend(list(deltaE_data[column].values))
+                deltaG_ea.extend(list(deltaG_data[column].values))
+
+
+        ax1.plot(deltaG_ac, deltaE_ac, label=i, marker='x')
+        ax2.plot(deltaG_ea, deltaE_ea, label=i, marker='x')
+
+    ax1.set_xlabel('Delta G')
+    ax1.set_ylabel('Delta E')
+    ax1.set_title('Delta E vs Delta G for DJ1 Acidities')
+    fig1.savefig(outname + '_ACIDITIES.png', dpi=(600))
+
+    ax2.set_xlabel('Delta G')
+    ax2.set_ylabel('Delta E')
+    ax2.set_title('Delta E vs Delta G for DJ1 Nucleophilicities')
+
+    ax1.legend(ncol=2, loc='upper left')
+    fig1.savefig(outname + '_ACIDITIES__With_LEG.png', dpi=(600))
+    fig2.savefig(outname + '_NUCLEOPHILICITIES.png', dpi=(600))

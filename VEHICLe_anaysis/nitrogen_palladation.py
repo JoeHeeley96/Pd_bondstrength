@@ -1,6 +1,7 @@
 from rdkit import Chem
 from rdkit.Chem import AllChem, rdchem
-from file_generation import xyzcoords_from_type_array
+from file_generation import xyzcoords_from_type_array, type_dict
+
 import numpy as np
 from neutral_generation import write_gaussian_command_with_regid, com_from_xyz_coords
 import os
@@ -59,3 +60,35 @@ def palladate_nitrogens(vehicle_dataframe):
             write_orca_file_for_directed_activation_opt_and_freq(str(k) + '_' + id, indexfilename, inpfilename)
 
             os.remove(indexfilename)
+
+def generate_basehet_input(amol):
+
+    types = type_dict()
+
+    structure = amol.info['molid']
+    xyz = amol.structure['xyz']
+    atoms = amol.structure['types']
+
+    with open('directed_activation/basehets/' + structure + '-basehet_opt-freq_wb97xd.inp', 'w') as f:
+
+        f.write('! wB97x-d3bj def2-SVP CPCM(Toluene) xyzfile opt freq\n')
+        f.write('%base "' + structure + 'OptFreq"\n')
+        f.write('%maxcore 2000\n')
+        f.write('%scf MaxIter 1500 end\n')
+        f.write('%pal nprocs 2\n')
+        f.write('end\n')
+        f.write('\n')
+        f.write('*xyz 0 1\n')
+
+        for type, coord in zip(atoms, xyz):
+            print(types[type], *list(coord), file=f)
+
+        f.write('*\n')
+        f.write('\n')
+        f.write('$new_job\n')
+        f.write('! wB97x-d3bj def2-TZVP CPCM(Toluene) printbasis\n')
+        f.write('%base"' + structure + 'SinglePoint"\n')
+        f.write('\n')
+        f.write('*xyzfile 0 1 ' + structure + 'OptFreq.xyz')
+        f.write('\n')
+
